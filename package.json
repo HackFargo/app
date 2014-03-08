@@ -1,10 +1,26 @@
 {
-    "name": "hack-fargo",
-    "description": "Hack Fargo",
-    "version": "0.0.1",
-    "private": true,
-    "dependencies": {
-        "express": "3.x",
-        "pg": "2.x",
-     }
+  "name": "hack-fargo",
+  "version": "0.0.0",
+  "description": "Hack Fargo SW2014",
+  "main": "index.js",
+  "dependencies": {
+    "express": "~3.5.0",
+    "pg": "~2.11.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HackFargo/app.git"
+  },
+  "keywords": [
+    "open",
+    "data"
+  ],
+  "bugs": {
+    "url": "https://github.com/HackFargo/app/issues"
+  },
+  "homepage": "https://github.com/HackFargo/app"
 }
