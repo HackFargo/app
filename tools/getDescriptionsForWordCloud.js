@@ -4,7 +4,7 @@ var moment = require('moment');
 
 var currentDate = moment('March 8, 2010');
 
-var logs = {DispatchLog: []};
+var words = '';
 
 var getPathForDate = function (date) {
 	return './json/' + date.format('MM-DD-YYYY') + '.json';
@@ -15,19 +15,21 @@ while(currentDate.isBefore('March 8, 2014')) {
 
 	var data = JSON.parse(jsonString);
 
-	logs.DispatchLog = logs.DispatchLog.concat(data.DispatchLog);
+	var length = data.DispatchLog.length;
+	for (var i =0;  i < length; i++) {
+		words += '\n' + data.DispatchLog[i].NatureOfCall;
+	}
 	
 	currentDate.add('d', 1);
 }
 
-console.log(logs.DispatchLog.length);
 
 
 
-fs.writeFile('./json/combined.json', JSON.stringify(logs), function(err) {
+fs.writeFile('./words.txt', words, function(err) {
 	if (err) throw err;
 
-	console.log('Combined DispatchLog saved');
+	console.log('Words saved');
 
 });
 
