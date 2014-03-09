@@ -5,11 +5,25 @@ var fs = require('fs');
 var sqlite3 = require('sqlite3');
 var moment = require('moment');
 
-var defaultDate = moment('March 7, 2014')
 var db = new sqlite3.Database("./tools/hackfargo.db");
 
+var fakeLat = function() {
+	var latMax = 46.919749,
+		latMin= 46.803665;
+
+	return latMin + (latMax - latMin) * Math.random();
+};
+
+var fakeLong = function() {
+	var longMax = -96.785670,
+		longMin= -96.900340;
+
+	return longMin + (longMax - longMin) * Math.random();
+}
+
 var processRequest = function(req, res) {
-	var startDate = defaultDate, endDate;
+	var startDate = moment().subtract('days', 15), 
+		endDate;
 
 	if (req.query.start) {
 		startDate = moment(req.query.start);
@@ -17,8 +31,11 @@ var processRequest = function(req, res) {
 
 	if (req.query.end) {
 		endDate = moment(req.query.end);
+	} else (!(req.query.start)) {
+		// No dates were provided, default end date is today
+		endDate = moment();
 	} else {
-		endDate = moment(startDate);
+		moment(startDate).add('days', 15)
 	}
 	
 	// Set the end date to the end of the day.
@@ -37,8 +54,8 @@ var processRequest = function(req, res) {
 			rows.forEach(function (row) {
 				dataSet.push({
 					DataSetID: 'DispatchLogs',
-					Lat: row.Lat,
-					Long: row.Long,
+					Lat: row.Lat ? row.Lat : fakeLat(),
+					Long: row.Long? row.Long : fakeLong(),
 					Date: row.DateVal,
 					Description: row[descriptionColumnName],
 					Meta: row,
