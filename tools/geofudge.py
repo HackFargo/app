@@ -5,14 +5,14 @@ TESTING RESULTS
 	LATITUDE IS SOLID TO A +/- 1 PERCENT THRESHOLD
 	LONGITUDE IS SOLIDTO A +/- 4 PERCENT THRESHOLD
 
-	Strict Requirements:
-		Block Numbers may only be integer types
-		Road Numbers may oly be integer types
-		Road ONLY allows AVE/ST
-		Road suffix ONLY allows N/S
-
+REQUIREMENTS:
+	Block Numbers may only be integer types
+	Road ONLY allows AVE/ST
+	Road suffix ONLY allows N/S
 """
+
 import math
+import geocoder
 
 latFloor = 46.919749	#Top of Fargo - North oriented
 latMid = 46.876153 		#'Middle' of Fargo - Main & 45th
@@ -32,7 +32,10 @@ def geofudge(blockNum, roadNum, roadType, suffix):
 	assert type(roadType) is str
 	assert type(suffix) is str
 
+	success = True
+
 	numBlocks = (blockNum/100)
+	roadType = roadType.upper()
 
 	if roadType == "AVE":
 
@@ -44,9 +47,8 @@ def geofudge(blockNum, roadNum, roadType, suffix):
 		elif suffix == "S":
 			LATITUDE = latMid - (latIncrement * roadNum)
 		
-		#Throw an Exception if E/W direction - case: West Fargo
 		else:
-			raise Exception("What is this?")
+			success = False
 
 	#Transform road to Longitude
 	elif roadType == "ST":
@@ -57,16 +59,31 @@ def geofudge(blockNum, roadNum, roadType, suffix):
 		elif suffix == "S":
 			LATITUDE = latMid - (latIncrement * roadNum) 
 
-		#Throw an Exception if E/W direction - case: West Fargo
 		else:
-			raise Exception("What is this?")
+			success = False
 
-	#Throw an Exception if anything like named roads is provided
 	else:
-		raise Exception("What is this?")
+		success = False
 
+	#if geofudge fails...go geocode
+	if success == False:
+		try:
+			#return (blockNum, roadNum, roadType, suffix)
+			return geocode(blockNum, roadNum, roadType, suffix).latlng
+		except OVER_QUERY_LIMIT:
+			raise Exception("!!!OVER_QUERY_LIMIT!!!")
+		except:
+			raise Exception("Even Google didn't figure this sh*t out...")
+
+	
 	return (LATITUDE, LONGITUDE)
 
+#This is the real deal...also, real expensive.
+def geocode(blockNum, roadNum, roadType, roadSuffix):
+	g = geocoder.google("{0} {1} {2} {3}, Fargo, ND".format(blockNum, roadNum, roadType, roadSuffix))
+
+	return g
+	
 def fudgetest(fake, real):
 
 	#Lat/Lon Side by Side comparison
@@ -99,7 +116,6 @@ if __name__ == '__main__':
 	print("-------------------------")
 
 	'''TESTING FOR ACCEPTABLE RANGES'''
-
 	#AVE S Testing
 	fake1 = geofudge(2500,23,"AVE","S")
 	real1 = (46.844215, -96.819778)
@@ -144,3 +160,29 @@ if __name__ == '__main__':
 	fake11 = geofudge(1000, 18, "ST", "N")
 	real11 = (46.887350, -96.809209)
 	fudgetest(fake11, real11)
+
+	fake11 = geofudge(0, 0, "ST", "N")
+	real11 = (46.887350, -96.809209)
+	fudgetest(fake11, real11)
+
+
+	fake11 = geofudge(0, 0, "ST", "S")
+	real11 = (46.887350, -96.809209)
+	fudgetest(fake11, real11)
+
+
+	fake11 = geofudge(0, 0, "AVE", "N")
+	real11 = (46.887350, -96.809209)
+	fudgetest(fake11, real11)
+
+
+	fake11 = geofudge(0, 0, "AVE", "S")
+	real11 = (46.887350, -96.809209)
+	fudgetest(fake11, real11)
+
+
+	fake11 = geofudge(0000, 0.5, "AVE", "N")
+	real11 = (46.887350, -96.809209)
+	fudgetest(fake11, real11)
+
+	print geofudge(1400, "ALBRECHT", "BLVD", "N")
