@@ -13,7 +13,7 @@ http://api.hackfargo.co/calls
 
 Get the calls from the from a date range:
 ```
-http://api.hackfargo.co/calls?state=6-20-2013&end=6-21-2013
+http://api.hackfargo.co/calls?start=6-20-2013&end=6-21-2013
 ```
 
 Get the calls related to specific incident type:
@@ -23,7 +23,7 @@ http://api.hackfargo.co/calls/type/Party
 
 Get the calls related to specific incident type with a date range:
 ```
-http://api.hackfargo.co/calls/type/Party?state=6-20-2013&end=6-21-2013
+http://api.hackfargo.co/calls/type/Party?start=3-3-2014&end=3-4-2014
 ```
 
 ## Sample Data from API
