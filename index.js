@@ -19,9 +19,9 @@ var fakeLong = function() {
 		longMin= -96.900340;
 
 	return longMin + (longMax - longMin) * Math.random();
-}
+};
 
-var processRequest = function(req, res, descriptionColumnName, descriptionFilter) {
+var processRequest = function(req, res, tableName, descriptionColumnName, descriptionFilter) {
 	var startDate = moment().subtract('days', 15), 
 		endDate;
 
@@ -34,23 +34,25 @@ var processRequest = function(req, res, descriptionColumnName, descriptionFilter
 		descriptionFilter = '';
 	}	
 
-	if (req.query.start) {
+	if (req.query.start && moment(req.query.start).isValid()) {
 		startDate = moment(req.query.start);
 	}
 
-	if (req.query.end) {
+	if (req.query.end && moment(req.query.end).isValid()) {
 		endDate = moment(req.query.end);
-	} else if (!(req.query.start)) {
+	} else if (!(req.query.start) || !moment(req.query.end).isValid()) {
 		// No dates were provided, default end date is today
 		endDate = moment();
 	} else {
-		moment(startDate).add('days', 15)
+		endDate = moment(startDate).add('days', 15)
 	}
 	
 	// Set the end date to the end of the day.
-	endDate.endOf('day')
+	if (endDate){
+		endDate.endOf('day');
+	}
 
-	db.all("SELECT * FROM DispatchLogs WHERE " + descriptionColumnName + " LIKE ? AND DateVal BETWEEN ? AND ? LIMIT 10000", '%' + descriptionFilter + '%', startDate.unix(), endDate.unix(), function(err, rows) {
+	db.all("SELECT * FROM " + tableName + " WHERE " + descriptionColumnName + " LIKE ? AND DateVal BETWEEN ? AND ? ORDER BY DateVal DESC LIMIT 10000", '%' + descriptionFilter + '%', startDate.unix(), endDate.unix(), function(err, rows) {
 	 
 		if (err) {
 			res.send(500, { error: 'something blew up' });
@@ -75,19 +77,31 @@ var processRequest = function(req, res, descriptionColumnName, descriptionFilter
 	});
 };
 
-app.all('/', function(req, res, next) {
+var addHeaders = function(res) {
 	res.header("Access-Control-Allow-Origin", "*");
 	res.header("Access-Control-Allow-Headers", "X-Requested-With");
-	next();
- });
+};
 
 app.get('/calls', function(req, res){
-	processRequest(req, res, 'NatureOfCall');
+	addHeaders(res);
+	processRequest(req, res, 'DispatchLogs','NatureOfCall');
 });
 	
 
 app.get('/calls/type/:typeFilter', function(req, res) {
-  processRequest(req, res, 'NatureOfCall', req.params.typeFilter);
+	addHeaders(res);
+ 	processRequest(req, res, 'DispatchLogs', 'NatureOfCall', req.params.typeFilter);
+});
+
+app.get('/permits', function(req, res){
+	addHeaders(res);
+	processRequest(req, res, 'BuildingPermits','PermitType');
+});
+	
+
+app.get('/permits/type/:typeFilter', function(req, res) {
+	addHeaders(res);
+ 	processRequest(req, res, 'BuildingPermits', 'PermitType', req.params.typeFilter);
 });
 
 app.listen(8181);
