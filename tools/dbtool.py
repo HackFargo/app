@@ -8,6 +8,15 @@ conn = sqlite3.connect('hackfargo.db')
 c = conn.cursor()
 
 
+def update_geo():
+    query = '''select * from DispatchLogs'''
+    c.execute(query)
+    rows = c.fetchall()
+    for r in rows:
+        print r
+        break
+
+
 def dbinit():
     schema = '''
         create table DispatchLogs(
@@ -20,7 +29,7 @@ def dbinit():
         IncidentNumber TEXT,
         Duration TEXT,
         AdditionalInfo TEXT,
-        CFSID INTEGER,
+        CFSID INTEGER UNIQUE,
         VenueName TEXT,
         VenueDescription TEXT,
         Block TEXT,
@@ -32,13 +41,17 @@ def dbinit():
         Lat REAL,
         Long REAL
         )'''
-    c.execute('DROP TABLE DispatchLogs')
-    c.execute(schema)
+    #c.execute('DROP TABLE DispatchLogs')
+    #c.execute('DROP TABLE BuildingPermits')
+    try:
+        c.execute(schema)
 
-    # Create Indices
-    c.execute('CREATE INDEX i1 ON DispatchLogs (IncidentNumber)')
-    c.execute('CREATE INDEX i2 ON DispatchLogs (CallType)')
-    c.execute('CREATE INDEX i3 ON DispatchLogs (VenueName)')
+        # Create Indices
+        c.execute('CREATE INDEX i1 ON DispatchLogs (IncidentNumber)')
+        c.execute('CREATE INDEX i2 ON DispatchLogs (CallType)')
+        c.execute('CREATE INDEX i3 ON DispatchLogs (VenueName)')
+    except sqlite3.OperationalError:
+        pass
 
     conn.commit()
 '''(Pdb) data['DispatchLog'][0].items()
@@ -88,11 +101,15 @@ def populate(folder='json/'):
                 VenueDescription, DateVal, Lat, Long) VALUES (?, ?, ?, ?, ?, 
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 '''
-            conn.execute(query, (d['CallType'], d['AdditionalInfo'],
-                                 d['NatureOfCall'], d['StreetType'], d['VenueName'], d['Address'],
-                                 d['StreetPreType'], d['DateString'], d['Duration'], d['StreetSuffix'],
-                                 d['Block'], d['IncidentNumber'], d['CFSID'], d['StreetPrefix'],
-                                 d['StreetName'], d['VenueDescription'], dateval, lat, lon))
+            try:
+                conn.execute(query, (d['CallType'], d['AdditionalInfo'],
+                                     d['NatureOfCall'], d['StreetType'], d['VenueName'], d['Address'],
+                                     d['StreetPreType'], d['DateString'], d['Duration'], d['StreetSuffix'],
+                                     d['Block'], d['IncidentNumber'], d['CFSID'], d['StreetPrefix'],
+                                     d['StreetName'], d['VenueDescription'], dateval, lat, lon))
+            except sqlite3.IntegrityError:
+                # non-unique data
+                pass
     conn.commit()
 
 # CREATE INDEX index_name ON DispatchLogs (column_name)
@@ -101,4 +118,6 @@ def populate(folder='json/'):
 if __name__ == "__main__":
     dbinit()
     populate()
+
+    update_geo()
     conn.close()
