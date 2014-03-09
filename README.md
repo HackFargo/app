@@ -91,7 +91,7 @@ http://api.hackfargo.co/calls/type/Party?start=3-3-2014&end=3-4-2014
 ```
 
 
-The currently bounds of the of the Lat and Long values returned are as follows:
+The current bounds of the of the Lat and Long data values returned are as follows:
 ```
 	latMax = 46.919749
 	latMin = 46.803665
