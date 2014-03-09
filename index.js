@@ -21,9 +21,18 @@ var fakeLong = function() {
 	return longMin + (longMax - longMin) * Math.random();
 }
 
-var processRequest = function(req, res) {
+var processRequest = function(req, res, descriptionColumnName, descriptionFilter) {
 	var startDate = moment().subtract('days', 15), 
 		endDate;
+
+	if (!descriptionColumnName) {
+		res.send(500, { error: 'something blew up' });
+		return;	
+	}
+
+	if (!descriptionFilter) {
+		descriptionFilter = '';
+	}	
 
 	if (req.query.start) {
 		startDate = moment(req.query.start);
@@ -41,11 +50,11 @@ var processRequest = function(req, res) {
 	// Set the end date to the end of the day.
 	endDate.endOf('day')
 
-	var descriptionColumnName = 'NatureOfCall';
-	db.all("SELECT * FROM DispatchLogs WHERE DateVal BETWEEN ? AND ? LIMIT 10000", startDate.unix(), endDate.unix(), function(err, rows) {
+	db.all("SELECT * FROM DispatchLogs WHERE " + descriptionColumnName + " LIKE ? AND DateVal BETWEEN ? AND ? LIMIT 10000", '%' + descriptionFilter + '%', startDate.unix(), endDate.unix(), function(err, rows) {
 	 
 		if (err) {
 			res.send(500, { error: 'something blew up' });
+			return;
 		}
 
 		if (rows)
@@ -67,12 +76,12 @@ var processRequest = function(req, res) {
 };
 
 app.get('/calls', function(req, res){
-	processRequest(req, res);
+	processRequest(req, res, 'NatureOfCall');
 });
 	
 
-app.get('/calls/type/:id', function(req, res) {
-  processRequest(req, res);
+app.get('/calls/type/:typeFilter', function(req, res) {
+  processRequest(req, res, 'NatureOfCall', req.params.typeFilter);
 });
 
 app.listen(8181);
