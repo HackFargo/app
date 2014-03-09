@@ -18,7 +18,7 @@ var processRequest = function(req, res) {
 	if (req.query.end) {
 		endDate = moment(req.query.end);
 	} else {
-		endDate = startDate;
+		endDate = moment(startDate);
 	}
 	
 	// Set the end date to the end of the day.
