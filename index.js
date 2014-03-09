@@ -9,14 +9,14 @@ var db = new sqlite3.Database("./tools/hackfargo.db");
 
 var fakeLat = function() {
 	var latMax = 46.919749,
-		latMin= 46.803665;
+		latMin = 46.803665;
 
 	return latMin + (latMax - latMin) * Math.random();
 };
 
 var fakeLong = function() {
 	var longMax = -96.785670,
-		longMin= -96.900340;
+		longMin = -96.900340;
 
 	return longMin + (longMax - longMin) * Math.random();
 };
