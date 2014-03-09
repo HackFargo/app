@@ -31,7 +31,7 @@ var processRequest = function(req, res) {
 
 	if (req.query.end) {
 		endDate = moment(req.query.end);
-	} else (!(req.query.start)) {
+	} else if (!(req.query.start)) {
 		// No dates were provided, default end date is today
 		endDate = moment();
 	} else {
