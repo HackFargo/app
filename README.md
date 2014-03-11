@@ -1,8 +1,3 @@
-app
-===
-
-The main repository for project hack fargo
-
 ## Sample API Usage
 All calls will return a max of 10,000 records.
 
@@ -31,15 +26,15 @@ http://api.hackfargo.co/calls/type/Party?start=3-3-2014&end=3-4-2014
 [
   {
     "DataSetID": "DispatchLogs",
-    "Lat": 46.81618741541262,
+    "Lat": 46.81618741541262, // We are currently estimating Lat and Long using out GeoFudge algorithim more details can be found in the tools/geofudge folder of the repository.
     "Long": -96.88359341719978,
-    "Date": 1394258006,
+    "Date": 1394258006,   // Unix timestamp
     "Description": "LOUD PEOPLE/MARIJUANA ODOR",
     "Meta": {
       "id": 215986,
       "DateString": "3/7/2014 11:53:26 PM",
       "DateVal": 1394258006,
-      "Address": "900 BLK 44 ST S",
+      "Address": "900 BLK 44 ST S", // Note Address is are only accurate to a block level. Example: 314 Broadway becomes 300 Broadway.
       "NatureOfCall": "LOUD PEOPLE/MARIJUANA ODOR",
       "CallType": "Loud Party/People",
       "IncidentNumber": "",
@@ -48,7 +43,7 @@ http://api.hackfargo.co/calls/type/Party?start=3-3-2014&end=3-4-2014
       "CFSID": -5202747,
       "VenueName": "FGO",
       "VenueDescription": "Fargo",
-      "Block": "900",
+      "Block": "900", // Again this is only accurate to a block level.
       "StreetPrefix": "",
       "StreetPretype": "",
       "StreetName": "44",

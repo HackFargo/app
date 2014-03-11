@@ -21,6 +21,8 @@ var fakeLong = function() {
 	return longMin + (longMax - longMin) * Math.random();
 };
 
+// tableName and descriptionColumn name should never com from user data since 
+// that would open us up to SQL injection attacks.
 var processRequest = function(req, res, tableName, descriptionColumnName, descriptionFilter) {
 	var startDate = moment().subtract('days', 15), 
 		endDate;
@@ -34,10 +36,10 @@ var processRequest = function(req, res, tableName, descriptionColumnName, descri
 		descriptionFilter = '';
 	}	
 
+	// Retrieve the start and end date or create one if needed.
 	if (req.query.start && moment(req.query.start).isValid()) {
 		startDate = moment(req.query.start);
 	}
-
 	if (req.query.end && moment(req.query.end).isValid()) {
 		endDate = moment(req.query.end);
 	} else if (!(req.query.start) || !moment(req.query.end).isValid()) {
@@ -52,28 +54,40 @@ var processRequest = function(req, res, tableName, descriptionColumnName, descri
 		endDate.endOf('day');
 	}
 
-	db.all("SELECT * FROM " + tableName + " WHERE " + descriptionColumnName + " LIKE ? AND DateVal BETWEEN ? AND ? ORDER BY DateVal DESC LIMIT 10000", '%' + descriptionFilter + '%', startDate.unix(), endDate.unix(), function(err, rows) {
+	// Initialize an empty data set.
+	var dataSet = []
+	
+	db.each("SELECT * FROM " + tableName + " WHERE " + descriptionColumnName + " LIKE ? AND DateVal BETWEEN ? AND ? ORDER BY DateVal DESC LIMIT 10000", 
+			'%' + descriptionFilter + '%', 
+			startDate.unix(), 
+			endDate.unix(), 
+		function(err, row) {  // Row Handler, called once per row.
 	 
 		if (err) {
 			res.send(500, { error: 'something blew up' });
 			return;
 		}
 
-		if (rows)
+		if (row)
 		{ 
-			var dataSet = []
-			rows.forEach(function (row) {
-				dataSet.push({
-					DataSetID: 'DispatchLogs',
-					Lat: row.Lat ? row.Lat : fakeLat(),
-					Long: row.Long? row.Long : fakeLong(),
-					Date: row.DateVal,
-					Description: row[descriptionColumnName],
-					Meta: row,
-				})
+			dataSet.push({
+				DataSetID: tableName,
+				Lat: row.Lat ? row.Lat : fakeLat(),
+				Long: row.Long? row.Long : fakeLong(),
+				Date: row.DateVal,
+				Description: row[descriptionColumnName],
+				Meta: row,
 			});
-			res.json(dataSet);
 		}
+	},
+
+	function(err, rowCount) {  // Query complete handler, called after query is executed.
+		if (err) {
+			res.send(500, { error: 'something blew up' });
+			return;
+		}
+
+		res.json(dataSet);
 	});
 };
 
