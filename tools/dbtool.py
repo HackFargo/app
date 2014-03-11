@@ -5,7 +5,17 @@ import simplejson
 from datetime import datetime
 from geofudge import geofudge
 
-# Add useful helper to sqlite interface
+# should probably remove these values, which are always returned by mapquest
+# ... but sometimes mapquest still returns others. Looks like a default.
+# 1700 BLK DAKOTA DR N Fargo, ND
+# 36789/216138 (17.02107%)  46.876960000, -96.784636000 - mapquest
+
+
+import geocoder
+geo = {'google': geocoder.google,
+       'mapquest': geocoder.mapquest,
+       'tomtom': geocoder.tomtom,
+       'arcgis': geocoder.arcgis}
 
 
 def dict_factory(cursor, row):
@@ -18,9 +28,53 @@ conn.row_factory = sqlite3.Row
 c = conn.cursor()
 
 
-def update_record(CFSID, lat, lon):
-    query = 'update DispatchLogs set Lat=?, Long=? where CFSID=?'
-    c.execute(query, (lat, lon, CFSID))
+def update_record(CFSID, lat, lon, lookup_type=1):
+    query = 'update DispatchLogs set Lat=?, Long=?, GeoLookupType=? where CFSID=?'
+    c.execute(query, (lat, lon, lookup_type, CFSID))
+
+
+def update_geo_real():
+    '''
+        Use a true upstream geocoder to identify the locations
+    '''
+    query = '''select * from DispatchLogs'''
+    c.execute(query)
+    rows = c.fetchall()
+    success = 0
+    total = len(rows)
+    i = 0
+    for r in rows:
+        if r['GeoLookupType'] == 2:
+            print 'skipping...'
+            i += 1
+            continue
+        address = "%s %s, ND" % (r['Address'], r['VenueDescription'])
+        #result = geocoder.google(address).latlng
+        coder = 'google'
+        result = [None, None]
+        coder = 'none'
+        if (result[0] == None):
+            result = geocoder.tomtom(address).latlng
+            coder = 'tomtom'
+        if (result[0]) == None:
+            try:
+                result = geocoder.mapquest(address).latlng
+            except simplejson.decoder.JSONDecodeError:
+                # invalid address parsing error
+                pass
+            coder = 'mapquest'
+        if (result[0]) == None:
+            result = geocoder.arcgis(address).latlng
+            coder = 'arcgis'
+        lat, lon = result
+        print address
+        print '%d/%d (%.5f%%)  %.9f, %.9f - %s' % (i, total, (float(i) / total) * 100, lat, lon, coder)
+        if lat != None:
+            update_record(r['CFSID'], lat, lon, 2)
+            success += 1
+        conn.commit()
+        i += 1
+    print success, 'successful lookups of ', total, ' total rows'
 
 
 def update_geo():
@@ -125,7 +179,8 @@ def dbinit():
         StreetType TEXT,
         StreetSuffix TEXT,
         Lat REAL,
-        Long REAL
+        Long REAL,
+        GeoLookupType INTEGER
         )'''
     #c.execute('DROP TABLE DispatchLogs')
     #c.execute('DROP TABLE BuildingPermits')
@@ -184,15 +239,15 @@ def populate(folder='json/'):
             query = '''INSERT INTO DispatchLogs (CallType, AdditionalInfo, NatureOfCall,
                 StreetType, VenueName, Address, StreetPreType, DateString, Duration,
                 StreetSuffix, Block, IncidentNumber, CFSID, StreetPrefix, StreetName,
-                VenueDescription, DateVal, Lat, Long) VALUES (?, ?, ?, ?, ?, 
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VenueDescription, DateVal, Lat, Long, GeoLookupType) VALUES (?, ?, ?, ?, ?, 
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 '''
             try:
                 conn.execute(query, (d['CallType'], d['AdditionalInfo'],
                                      d['NatureOfCall'], d['StreetType'], d['VenueName'], d['Address'],
                                      d['StreetPreType'], d['DateString'], d['Duration'], d['StreetSuffix'],
                                      d['Block'], d['IncidentNumber'], d['CFSID'], d['StreetPrefix'],
-                                     d['StreetName'], d['VenueDescription'], dateval, lat, lon))
+                                     d['StreetName'], d['VenueDescription'], dateval, lat, lon, 0))
             except sqlite3.IntegrityError:
                 # non-unique data
                 pass
@@ -205,5 +260,5 @@ if __name__ == "__main__":
     # dbinit()
     # populate()
 
-    update_geo()
+    update_geo_real()
     conn.close()
