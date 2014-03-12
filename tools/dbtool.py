@@ -37,7 +37,7 @@ def update_geo_real():
     '''
         Use a true upstream geocoder to identify the locations
     '''
-    query = '''select * from DispatchLogs'''
+    query = '''select * from DispatchLogs where Lat=0'''
     c.execute(query)
     rows = c.fetchall()
     success = 0
@@ -78,7 +78,7 @@ def update_geo_real():
 
 
 def update_geo():
-    query = '''select * from DispatchLogs'''
+    query = '''select * from DispatchLogs where GeoLookupType<>2'''
     c.execute(query)
     rows = c.fetchall()
     success = 0
