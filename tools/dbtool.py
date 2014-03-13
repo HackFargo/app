@@ -9,6 +9,7 @@ from geofudge import geofudge
 # ... but sometimes mapquest still returns others. Looks like a default.
 # 1700 BLK DAKOTA DR N Fargo, ND
 # 36789/216138 (17.02107%)  46.876960000, -96.784636000 - mapquest
+# 10/9245 (0.10817%)  46.263918000, -96.605505000 - mapquest
 
 
 import geocoder
@@ -37,24 +38,24 @@ def update_geo_real():
     '''
         Use a true upstream geocoder to identify the locations
     '''
-    query = '''select * from DispatchLogs where Lat=0'''
+    query = '''select * from DispatchLogs where Long=-96.784636'''
     c.execute(query)
     rows = c.fetchall()
     success = 0
     total = len(rows)
     i = 0
     for r in rows:
-        if r['GeoLookupType'] == 2:
-            print 'skipping...'
-            i += 1
-            continue
+        # if r['GeoLookupType'] == 2:
+            # print 'skipping...'
+            #i += 1
+            # continue
         address = "%s %s, ND" % (r['Address'], r['VenueDescription'])
-        #result = geocoder.google(address).latlng
+        result = geocoder.google(address).latlng
         coder = 'google'
-        result = [None, None]
-        coder = 'none'
+        #result = [None, None]
+        #coder = 'none'
         if (result[0] == None):
-            result = geocoder.tomtom(address).latlng
+            #result = geocoder.tomtom(address).latlng
             coder = 'tomtom'
         if (result[0]) == None:
             try:
@@ -62,10 +63,13 @@ def update_geo_real():
             except simplejson.decoder.JSONDecodeError:
                 # invalid address parsing error
                 pass
+
+            if result[1] == -96.784636:
+                result = [None, None]
             coder = 'mapquest'
         if (result[0]) == None:
-            result = geocoder.arcgis(address).latlng
-            coder = 'arcgis'
+            result = geocoder.google(address).latlng
+            coder = 'google'
         lat, lon = result
         print address
         print '%d/%d (%.5f%%)  %.9f, %.9f - %s' % (i, total, (float(i) / total) * 100, lat, lon, coder)
