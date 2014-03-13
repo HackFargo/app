@@ -23,6 +23,48 @@ var fakeLong = function() {
 
 // tableName and descriptionColumn name should never com from user data since 
 // that would open us up to SQL injection attacks.
+var processRequestRandom = function(req, res, tableName, descriptionColumnName, descriptionFilter) {
+
+	if (!descriptionColumnName) {
+		res.send(500, { error: 'something blew up' });
+		return;	
+	}
+
+	// Initialize an empty data set.
+	var dataSet = [];
+	
+	db.each("SELECT * FROM " + tableName + " WHERE GeoLookupType=1 order by RANDOM() LIMIT 100", 
+		function(err, row) {  // Row Handler, called once per row.
+	 
+		if (err) {
+			res.send(500, { error: 'something blew up' });
+			return;
+		}
+
+		if (row)
+		{ 
+			dataSet.push({
+				DataSetID: tableName,
+				Lat: row.Lat ? row.Lat : fakeLat(),
+				Long: row.Long? row.Long : fakeLong(),
+				Date: row.DateVal,
+				Description: row[descriptionColumnName],
+				Meta: row,
+			});
+		}
+	},
+
+	function(err, rowCount) {  // Query complete handler, called after query is executed.
+		if (err) {
+			res.send(500, { error: 'something blew up' });
+			return;
+		}
+		res.json(dataSet);
+	});
+};
+
+// tableName and descriptionColumn name should never com from user data since 
+// that would open us up to SQL injection attacks.
 var processRequest = function(req, res, tableName, descriptionColumnName, descriptionFilter) {
 	var startDate = moment().subtract('days', 15), 
 		endDate;
@@ -56,18 +98,21 @@ var processRequest = function(req, res, tableName, descriptionColumnName, descri
 
 	// Initialize an empty data set.
 	var dataSet = []
-
+	limit = 10000;
 	if (descriptionFilter == 'random') {
 		orderBy = 'RANDOM()';
+		descriptionFilter = "";
+		limit = 100;
 	} else {
 		orderBy = 'DateVal';
 	}
 	
-	db.each("SELECT * FROM " + tableName + " WHERE " + descriptionColumnName + " LIKE ? AND DateVal BETWEEN ? AND ? ORDER BY ? DESC LIMIT 10000", 
+	db.each("SELECT * FROM " + tableName + " WHERE " + descriptionColumnName + " LIKE ? AND DateVal BETWEEN ? AND ? ORDER BY ? DESC LIMIT ?", 
 			'%' + descriptionFilter + '%', 
 			startDate.unix(), 
 			endDate.unix(), 
 			orderBy,
+			limit,
 		function(err, row) {  // Row Handler, called once per row.
 	 
 		if (err) {
@@ -107,7 +152,11 @@ app.get('/calls', function(req, res){
 	addHeaders(res);
 	processRequest(req, res, 'DispatchLogs','NatureOfCall');
 });
-	
+
+app.get('/calls/type/random', function(req, res){
+	addHeaders(res);
+	processRequestRandom(req, res, 'DispatchLogs','NatureOfCall');
+});
 
 app.get('/calls/type/:typeFilter', function(req, res) {
 	addHeaders(res);
