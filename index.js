@@ -56,11 +56,18 @@ var processRequest = function(req, res, tableName, descriptionColumnName, descri
 
 	// Initialize an empty data set.
 	var dataSet = []
+
+	if (descriptionFilter == 'random') {
+		orderBy = 'RANDOM()';
+	} else {
+		orderBy = 'DateVal';
+	}
 	
-	db.each("SELECT * FROM " + tableName + " WHERE " + descriptionColumnName + " LIKE ? AND DateVal BETWEEN ? AND ? ORDER BY DateVal DESC LIMIT 10000", 
+	db.each("SELECT * FROM " + tableName + " WHERE " + descriptionColumnName + " LIKE ? AND DateVal BETWEEN ? AND ? ORDER BY ? DESC LIMIT 10000", 
 			'%' + descriptionFilter + '%', 
 			startDate.unix(), 
 			endDate.unix(), 
+			orderBy,
 		function(err, row) {  // Row Handler, called once per row.
 	 
 		if (err) {
