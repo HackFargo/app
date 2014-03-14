@@ -69,16 +69,17 @@ def geofudge(blockNum, roadNum, roadType, suffix):
     # if geofudge fails...go geocode
     if success == False:
         try:
-            # return (blockNum, roadNum, roadType, suffix)
+						# This is the real deal...also, real expensive.
             return geocode(blockNum, roadNum, roadType, suffix).latlng
+
         except OVER_QUERY_LIMIT:
             raise Exception("!!!OVER_QUERY_LIMIT!!!")
+
         except:
             raise Exception("Even Google didn't figure this sh*t out...")
 
     return (LATITUDE, LONGITUDE)
 
-# This is the real deal...also, real expensive.
 
 
 def geocode(blockNum, roadNum, roadType, roadSuffix):
