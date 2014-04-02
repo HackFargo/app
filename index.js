@@ -148,6 +148,8 @@ var addHeaders = function(res) {
 	res.header("Access-Control-Allow-Headers", "X-Requested-With");
 };
 
+app.use(express.compress());
+
 app.get('/calls', function(req, res){
 	addHeaders(res);
 	processRequest(req, res, 'DispatchLogs','NatureOfCall');
