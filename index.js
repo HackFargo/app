@@ -21,19 +21,70 @@ var fakeLong = function() {
 	return longMin + (longMax - longMin) * Math.random();
 };
 
-// tableName and descriptionColumn name should never com from user data since
+// tableName name should never com from user data since
 // that would open us up to SQL injection attacks.
-var processRequestRandom = function(req, res, tableName, descriptionColumnName, descriptionFilter) {
+var calculateQueryParams = function(req, tableName, descriptionColumnName) {
+	var params = {
+		tableName: tableName,
+		descriptionColumnName: descriptionColumnName,
+		descriptionFilter: req.params.typeFilter
+	};
 
-	if (!descriptionColumnName) {
-		res.send(500, { error: 'something blew up' });
-		return;
+	if (!params.descriptionFilter) {
+		params.descriptionFilter = '';
 	}
+
+	params.maxLat = 90;
+	params.minLat = -90;
+	params.maxLong = 180;
+	params.minLong = -180;
+
+	if (req.query.maxLat) {
+		params.maxLat = req.query.maxLat;
+	}
+
+	if (req.query.minLat) {
+		params.minLat = req.query.minLat;
+	}
+
+	if (req.query.maxLong) {
+		params.maxLong = req.query.maxLong;
+	}
+
+	if (req.query.minLong) {
+		params.minLong = req.query.minLong;
+	}
+
+	params.startDate = moment().subtract('days', 15);
+
+	// Retrieve the start and end date or create one if needed.
+	if (req.query.start && moment(req.query.start).isValid()) {
+		params.startDate = moment(req.query.start);
+	}
+
+	if (req.query.end && moment(req.query.end).isValid()) {
+		params.endDate = moment(req.query.end);
+	} else if (!(req.query.start) || !moment(req.query.end).isValid()) {
+		// No dates were provided, default end date is today
+		params.endDate = moment();
+	} else {
+		params.endDate = moment(params.startDate).add('days', 15)
+	}
+
+	// Set the end date to the end of the day.
+	if (params.endDate){
+		params.endDate.endOf('day');
+	}
+
+	return params
+};
+
+var processRequestRandom = function(res, params) {
 
 	// Initialize an empty data set.
 	var dataSet = [];
 
-	db.each("SELECT * FROM " + tableName + " WHERE GeoLookupType=1 order by RANDOM() LIMIT 100",
+	db.each("SELECT * FROM " + params.tableName + " WHERE GeoLookupType=1 order by RANDOM() LIMIT 100",
 		function(err, row) {  // Row Handler, called once per row.
 
 		if (err) {
@@ -41,17 +92,7 @@ var processRequestRandom = function(req, res, tableName, descriptionColumnName, 
 			return;
 		}
 
-		if (row)
-		{
-			dataSet.push({
-				DataSetID: tableName,
-				Lat: row.Lat ? row.Lat : fakeLat(),
-				Long: row.Long? row.Long : fakeLong(),
-				Date: row.DateVal,
-				Description: row[descriptionColumnName],
-				Meta: row,
-			});
-		}
+		addRowToDataSet(dataSet, row, params);
 	},
 
 	function(err, rowCount) {  // Query complete handler, called after query is executed.
@@ -63,82 +104,26 @@ var processRequestRandom = function(req, res, tableName, descriptionColumnName, 
 	});
 };
 
-// tableName and descriptionColumn name should never com from user data since
-// that would open us up to SQL injection attacks.
-var processRequest = function(req, res, tableName, descriptionColumnName, descriptionFilter) {
-	var startDate = moment().subtract('days', 15),
-		endDate;
+var processRequest = function(res, params) {
 
-	if (!descriptionColumnName) {
+	if (!params.descriptionColumnName) {
 		res.send(500, { error: 'something blew up' });
 		return;
 	}
 
-	if (!descriptionFilter) {
-		descriptionFilter = '';
-	}
-
-	var maxLat = 90,
-			minLat = -90,
-			maxLong = 180,
-			minLong = -180;
-
-	if (req.query.maxLat) {
-		maxLat = req.query.maxLat;
-	}
-
-	if (req.query.minLat) {
-		minLat = req.query.minLat;
-	}
-
-	if (req.query.maxLong) {
-		maxLong = req.query.maxLong;
-	}
-
-	if (req.query.minLong) {
-		minLong = req.query.minLong;
-	}
-
-
-	// Retrieve the start and end date or create one if needed.
-	if (req.query.start && moment(req.query.start).isValid()) {
-		startDate = moment(req.query.start);
-	}
-	if (req.query.end && moment(req.query.end).isValid()) {
-		endDate = moment(req.query.end);
-	} else if (!(req.query.start) || !moment(req.query.end).isValid()) {
-		// No dates were provided, default end date is today
-		endDate = moment();
-	} else {
-		endDate = moment(startDate).add('days', 15)
-	}
-
-	// Set the end date to the end of the day.
-	if (endDate){
-		endDate.endOf('day');
-	}
-
 	// Initialize an empty data set.
 	var dataSet = []
-	limit = 10000;
-	if (descriptionFilter == 'random') {
-		orderBy = 'RANDOM()';
-		descriptionFilter = "";
-		limit = 100;
-	} else {
-		orderBy = 'DateVal';
-	}
 
-	db.each("SELECT * FROM " + tableName + " WHERE " + descriptionColumnName + " LIKE ? AND DateVal BETWEEN ? AND ? AND Lat BETWEEN ? AND ? AND Long BETWEEN ? AND ? ORDER BY ? DESC LIMIT ?",
-			'%' + descriptionFilter + '%',
-			startDate.unix(),
-			endDate.unix(),
-			minLat,
-			maxLat,
-			minLong,
-			maxLong,
-			orderBy,
-			limit,
+	db.each("SELECT * FROM " + params.tableName + " WHERE " + params.descriptionColumnName + " LIKE ? AND DateVal BETWEEN ? AND ? AND Lat BETWEEN ? AND ? AND Long BETWEEN ? AND ? ORDER BY ? DESC LIMIT ?",
+			'%' + params.descriptionFilter + '%',
+			params.startDate.unix(),
+			params.endDate.unix(),
+			params.minLat,
+			params.maxLat,
+			params.minLong,
+			params.maxLong,
+			'DateVal',
+			10000,
 		function(err, row) {  // Row Handler, called once per row.
 
 		if (err) {
@@ -146,17 +131,7 @@ var processRequest = function(req, res, tableName, descriptionColumnName, descri
 			return;
 		}
 
-		if (row)
-		{
-			dataSet.push({
-				DataSetID: tableName,
-				Lat: row.Lat ? row.Lat : fakeLat(),
-				Long: row.Long? row.Long : fakeLong(),
-				Date: row.DateVal,
-				Description: row[descriptionColumnName],
-				Meta: row,
-			});
-		}
+		addRowToDataSet(dataSet, row, params);
 	},
 
 	function(err, rowCount) {  // Query complete handler, called after query is executed.
@@ -168,6 +143,49 @@ var processRequest = function(req, res, tableName, descriptionColumnName, descri
 		res.json(dataSet);
 	});
 };
+
+var addRowToDataSet = function(dataSet, row, params) {
+	if (row)
+	{
+		dataSet.push({
+			DataSetID: params.tableName,
+			Lat: row.Lat ? row.Lat : fakeLat(),
+			Long: row.Long? row.Long : fakeLong(),
+			Date: row.DateVal,
+			Description: row[params.descriptionColumnName],
+			Meta: row,
+		});
+	}
+};
+
+var processCountRequest = function(res, params) {
+
+	if (!params.descriptionColumnName) {
+		res.send(500, { error: 'something blew up' });
+		return;
+	}
+
+	db.get("SELECT COUNT(*) as count FROM " + params.tableName + " WHERE " + params.descriptionColumnName + " LIKE ? AND DateVal BETWEEN ? AND ? AND Lat BETWEEN ? AND ? AND Long BETWEEN ? AND ?",
+			'%' + params.descriptionFilter + '%',
+			params.startDate.unix(),
+			params.endDate.unix(),
+			params.minLat,
+			params.maxLat,
+			params.minLong,
+			params.maxLong,
+		function(err, row) {  // Row Handler, called once per row.
+
+		if (err) {
+			res.send(500, { error: 'something blew up' });
+			return;
+		}
+			res.json({
+				count: row['count']
+			});
+	});
+};
+
+
 
 var addHeaders = function(res) {
 	res.header("Access-Control-Allow-Origin", "*");
@@ -176,30 +194,44 @@ var addHeaders = function(res) {
 
 app.use(express.compress());
 
-app.get('/calls', function(req, res){
-	addHeaders(res);
-	processRequest(req, res, 'DispatchLogs','NatureOfCall');
-});
+var endpoints = [
+	{
+		endpoint: 'calls',
+		table: 'DispatchLogs',
+		descriptionColumn: 'NatureOfCall'
+	},
+	{
+		endpoint: 'permits',
+		table: 'BuildingPermits',
+		descriptionColumn: 'PermitType'
+	}
+];
 
-app.get('/calls/type/random', function(req, res){
-	addHeaders(res);
-	processRequestRandom(req, res, 'DispatchLogs','NatureOfCall');
-});
+endpoints.forEach(function(endpoint) {
+		app.get('/' + endpoint.endpoint, function(req, res){
+			addHeaders(res);
+			processRequest(res, calculateQueryParams(req, endpoint.table, endpoint.descriptionColumn));
+		});
 
-app.get('/calls/type/:typeFilter', function(req, res) {
-	addHeaders(res);
- 	processRequest(req, res, 'DispatchLogs', 'NatureOfCall', req.params.typeFilter);
-});
+		app.get('/' + endpoint.endpoint + '/count', function(req, res){
+			addHeaders(res);
+			processCountRequest(res, calculateQueryParams(req, endpoint.table, endpoint.descriptionColumn));
+		});
 
-app.get('/permits', function(req, res){
-	addHeaders(res);
-	processRequest(req, res, 'BuildingPermits','PermitType');
-});
+		app.get('/' + endpoint.endpoint + '/type/random', function(req, res){
+			addHeaders(res);
+			processRequestRandom(res, calculateQueryParams(req, endpoint.table, endpoint.descriptionColumn));
+		});
 
+		app.get('/' + endpoint.endpoint + '/type/:typeFilter', function(req, res) {
+			addHeaders(res);
+			processRequest(res, calculateQueryParams(req, endpoint.table, endpoint.descriptionColumn));
+		});
 
-app.get('/permits/type/:typeFilter', function(req, res) {
-	addHeaders(res);
- 	processRequest(req, res, 'BuildingPermits', 'PermitType', req.params.typeFilter);
+		app.get('/' + endpoint.endpoint + '/type/:typeFilter/count', function(req, res) {
+			addHeaders(res);
+			processCountRequest(res, calculateQueryParams(req, endpoint.table, endpoint.descriptionColumn));
+		});
 });
 
 app.listen(8181);
