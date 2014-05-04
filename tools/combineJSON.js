@@ -2,7 +2,7 @@
 var fs = require('fs');
 var moment = require('moment');
 
-var currentDate = moment('March 8, 2010');
+var currentDate = moment('March 8, 2014');
 
 var logs = {DispatchLog: []};
 
@@ -10,7 +10,7 @@ var getPathForDate = function (date) {
 	return './json/' + date.format('MM-DD-YYYY') + '.json';
 };
 
-while(currentDate.isBefore('March 8, 2014')) {
+while(currentDate.isBefore('May 4, 2014')) {
 	var jsonString = fs.readFileSync(getPathForDate(currentDate), {encoding: 'utf-8'});
 
 	var data = JSON.parse(jsonString);

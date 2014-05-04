@@ -262,7 +262,7 @@ def populate(folder='json/'):
 
 if __name__ == "__main__":
     # dbinit()
-    # populate()
+    populate()
 
-    update_geo_real()
-    conn.close()
+    # update_geo_real()
+    # conn.close()
