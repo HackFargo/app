@@ -108,7 +108,7 @@ func http_geocoder(w http.ResponseWriter, r *http.Request) {
 func main() {
 	//lon, lat := geocode(db, "Fargo, ND")
 	r := geocode(db, "Fargo, ND")
-	fmt.Println("Fargo, ND: %.20f, %.20f", r.lon, r.lat)
+	fmt.Println(fmt.Sprintf("Fargo, ND: %.20f, %.20f", r.lon, r.lat))
 
 	fmt.Println("Server listening on :9999")
 	http.HandleFunc("/geocode/", http_geocoder)
