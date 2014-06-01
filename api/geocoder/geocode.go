@@ -48,9 +48,13 @@ func dbconnect() *sql.DB {
 	return db
 }
 
-func geocode(db *sql.DB, query string) (float64, float64) {
+func geocode(db *sql.DB, q string) (float64, float64) {
 	// let's try a query
-	rows, err := db.Query("SELECT g.rating, ST_X(g.geomout) As lon, ST_Y(g.geomout) As lat, (addy).address As stno, (addy).streetname As street, (addy).streettypeabbrev As styp, (addy).location As city, (addy).stateabbrev As st,(addy).zip FROM geocode('?') As g;", query)
+	stmt, serr := db.Prepare("SELECT g.rating, ST_X(g.geomout) As lon, ST_Y(g.geomout) As lat, (addy).address As stno, (addy).streetname As street, (addy).streettypeabbrev As styp, (addy).location As city, (addy).stateabbrev As st,(addy).zip FROM geocode(?) As g;")
+	if serr != nil {
+		log.Fatal(serr)
+	}
+	rows, err := stmt.Query(q)
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(2)
