@@ -6,4 +6,4 @@ forever index.js &
 
 echo "executing geocoder api..."
 cd ../geocoder/
-#./geocode &
+./geocode &>/dev/null &

@@ -137,7 +137,7 @@ func main() {
 	r := geocode(db, "Fargo, ND")
 	fmt.Println(fmt.Sprintf("Fargo, ND: %.20f, %.20f", r.lon, r.lat))
 
-	fmt.Println("Server listening on :9999")
+	fmt.Println("Server listening on :8282")
 	http.HandleFunc("/geocode/", http_geocoder)
 	http.HandleFunc("/", http_root)
 	http.ListenAndServe(":8282", nil)
