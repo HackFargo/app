@@ -28,6 +28,26 @@ type Configuration struct {
 	Password string
 }
 
+func loadconfig(configuration *Configuration) {
+	// load config
+	fmt.Print("Loading config.json...")
+	file, _ := os.Open("./config.json")
+	decoder := json.NewDecoder(file)
+	err2 := decoder.Decode(&configuration)
+	if err2 != nil {
+		fmt.Println("error:", err2)
+		os.Exit(1)
+	}
+	fmt.Println("success")
+}
+
+func dbconnect() sql.DB {
+	configuration := Configuration{}
+	loadconfig(&configuration)
+	db, err := sql.Open("postgres", fmt.Sprintf("dbname=%s user=%s password=%s", configuration.Dbname, configuration.User, configuration.Password))
+	return db
+}
+
 func main() {
 	var (
 		rating int
@@ -40,20 +60,7 @@ func main() {
 		state  sql.NullString
 		zip    sql.NullString
 	)
-
-	// load config
-	fmt.Print("Loading config.json...")
-	file, _ := os.Open("./config.json")
-	decoder := json.NewDecoder(file)
-	configuration := Configuration{}
-	err2 := decoder.Decode(&configuration)
-	if err2 != nil {
-		fmt.Println("error:", err2)
-		os.Exit(1)
-	}
-	fmt.Println("success")
-
-	db, err := sql.Open("postgres", fmt.Sprintf("dbname=%s user=%s password=%s", configuration.Dbname, configuration.User, configuration.Password))
+	db := dbconnect()
 
 	// let's try a query
 	rows, err := db.Query("SELECT g.rating, ST_X(g.geomout) As lon, ST_Y(g.geomout) As lat, (addy).address As stno, (addy).streetname As street, (addy).streettypeabbrev As styp, (addy).location As city, (addy).stateabbrev As st,(addy).zip FROM geocode('Fargo, ND') As g;")
