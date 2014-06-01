@@ -92,7 +92,7 @@ func geocode(db *sql.DB, query string) (float64, float64) {
 func http_geocoder(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Path[len("/geocode/"):]
 	lon, lat := geocode(db, query)
-	fmt.fPrintf(w, "{\"lon\": %f, \"lat\": %f}", lon, lat)
+	fmt.Fprintf(w, "{\"lon\": %f, \"lat\": %f}", lon, lat)
 }
 
 func main() {
