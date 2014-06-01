@@ -66,6 +66,7 @@ func main() {
 			log.Fatal(err)
 		}
 		fmt.Printf("%f, %f", lon, lat)
+		fmt.Println("")
 	}
 	if err := rows.Err(); err != nil {
 		log.Fatal(err)
