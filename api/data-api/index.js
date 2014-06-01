@@ -5,7 +5,7 @@ var fs = require('fs');
 var sqlite3 = require('sqlite3');
 var moment = require('moment');
 
-var db = new sqlite3.Database("./tools/hackfargo.db");
+var db = new sqlite3.Database("../../tools/hackfargo.db");
 
 var fakeLat = function() {
 	var latMax = 46.919749,
