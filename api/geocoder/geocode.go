@@ -91,11 +91,11 @@ func geocode(db *sql.DB, query string) *GeoCodeResult {
 
 	result := new(GeoCodeResult)
 	for rows.Next() {
-		if err := rows.Scan(&rating, &lon, &lat, &stno, &street, &styp, &city, &st, &zip); err != nil {
+		if err := rows.Scan(&rating, &(result.lon), &lat, &stno, &street, &styp, &city, &st, &zip); err != nil {
 			log.Fatal(err)
 		}
 		result.rating = rating
-		result.lon = lon
+		//result.lon = lon
 		result.lat = lat
 		result.stno = stno
 		result.street = street
