@@ -33,16 +33,16 @@ func main() {
 		rating int
 		lon    float64
 		lat    float64
-		stno   string
-		street string
-		styp   string
-		city   string
-		state  string
-		zip    string
+		stno   sql.NullString
+		street sql.NullString
+		styp   sql.NullString
+		city   sql.NullString
+		state  sql.NullString
+		zip    sql.NullString
 	)
 
 	// load config
-	fmt.Println("Loading config.json...")
+	fmt.Print("Loading config.json...")
 	file, _ := os.Open("./config.json")
 	decoder := json.NewDecoder(file)
 	configuration := Configuration{}
@@ -51,8 +51,7 @@ func main() {
 		fmt.Println("error:", err2)
 		os.Exit(1)
 	}
-	fmt.Println("username:")
-	fmt.Println(configuration) // output: [UserA, UserB]
+	fmt.Println("success")
 
 	db, err := sql.Open("postgres", fmt.Sprintf("dbname=%s user=%s password=%s", configuration.Dbname, configuration.User, configuration.Password))
 
@@ -60,6 +59,7 @@ func main() {
 	rows, err := db.Query("SELECT g.rating, ST_X(g.geomout) As lon, ST_Y(g.geomout) As lat, (addy).address As stno, (addy).streetname As street, (addy).streettypeabbrev As styp, (addy).location As city, (addy).stateabbrev As st,(addy).zip FROM geocode('Fargo, ND') As g;")
 	if err != nil {
 		log.Fatal(err)
+		os.Exit(2)
 	}
 	for rows.Next() {
 		if err := rows.Scan(&rating, &lon, &lat, &stno, &street, &styp, &city, &state, &zip); err != nil {
@@ -69,5 +69,6 @@ func main() {
 	}
 	if err := rows.Err(); err != nil {
 		log.Fatal(err)
+		os.Exit(3)
 	}
 }
