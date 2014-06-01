@@ -28,18 +28,6 @@ type Configuration struct {
 	Password string
 }
 
-type GeoCodeResult struct {
-	rating int
-	lon    float64
-	lat    float64
-	stno   sql.NullString
-	street sql.NullString
-	styp   sql.NullString
-	city   sql.NullString
-	st     sql.NullString
-	zip    sql.NullString
-}
-
 func loadconfig(configuration *Configuration) {
 	// load config
 	fmt.Print("Loading config.json...")
@@ -70,26 +58,23 @@ func main() {
 		os.Exit(2)
 	}
 
-	/*
-		var (
-			rating int
-			lon    float64
-			lat    float64
-			stno   sql.NullString
-			street sql.NullString
-			styp   sql.NullString
-			city   sql.NullString
-			state  sql.NullString
-			zip    sql.NullString
-		) */
+	var (
+		rating int
+		lon    float64
+		lat    float64
+		stno   sql.NullString
+		street sql.NullString
+		styp   sql.NullString
+		city   sql.NullString
+		st     sql.NullString
+		zip    sql.NullString
+	)
 
 	for rows.Next() {
-		gc := GeoCodeResult{}
-		if err := rows.Scan(&gc.rating, &gc.lon, &gc.lat, &gc.stno, &gc.street, &gc.styp, &gc.city, &gc.st, &gc.zip); err != nil {
+		if err := rows.Scan(&rating, &lon, &lat, &stno, &street, &styp, &city, &st, &zip); err != nil {
 			log.Fatal(err)
 		}
-		//fmt.Printf("%f, %f", lon, lat)
-		fmt.Printf("%s, %s", gc.lon, gc.lat)
+		fmt.Printf("%f, %f", lon, lat)
 		fmt.Println("")
 	}
 	if err := rows.Err(); err != nil {
