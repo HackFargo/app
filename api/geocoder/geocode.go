@@ -41,10 +41,10 @@ func loadconfig(configuration *Configuration) {
 	fmt.Println("success")
 }
 
-func dbconnect() sql.DB {
+func dbconnect() *sql.DB {
 	configuration := Configuration{}
 	loadconfig(&configuration)
-	db, err := sql.Open("postgres", fmt.Sprintf("dbname=%s user=%s password=%s", configuration.Dbname, configuration.User, configuration.Password))
+	db, _ := sql.Open("postgres", fmt.Sprintf("dbname=%s user=%s password=%s", configuration.Dbname, configuration.User, configuration.Password))
 	return db
 }
 
