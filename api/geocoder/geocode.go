@@ -84,9 +84,8 @@ func main() {
 		) */
 
 	for rows.Next() {
-		//if err := rows.Scan(&rating, &lon, &lat, &stno, &street, &styp, &city, &state, &zip); err != nil {
 		gc := GeoCodeResult{}
-		if err := rows.Scan(&gc); err != nil {
+		if err := rows.Scan(&gc.rating, &gc.lon, &gc.lat, &gc.stno, &gc.street, &gc.styp, &gc.city, &gc.st, &gc.zip); err != nil {
 			log.Fatal(err)
 		}
 		//fmt.Printf("%f, %f", lon, lat)
