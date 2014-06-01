@@ -49,6 +49,7 @@ func main() {
 	err2 := decoder.Decode(&configuration)
 	if err2 != nil {
 		fmt.Println("error:", err2)
+		os.Exit(1)
 	}
 	fmt.Println("username:")
 	fmt.Println(configuration) // output: [UserA, UserB]
