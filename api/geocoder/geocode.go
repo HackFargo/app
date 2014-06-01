@@ -79,7 +79,7 @@ func geocode(db *sql.DB, query string) *GeoCodeResult {
 
 	var (
 		rating int
-		lon    float64
+		//lon    float64
 		lat    float64
 		stno   sql.NullString
 		street sql.NullString
