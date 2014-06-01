@@ -28,6 +28,18 @@ type Configuration struct {
 	Password string
 }
 
+type GeoCodeResult struct {
+	rating int
+	lon    float64
+	lat    float64
+	stno   sql.NullString
+	street sql.NullString
+	styp   sql.NullString
+	city   sql.NullString
+	st     sql.NullString
+	zip    sql.NullString
+}
+
 func loadconfig(configuration *Configuration) {
 	// load config
 	fmt.Print("Loading config.json...")
@@ -49,17 +61,6 @@ func dbconnect() *sql.DB {
 }
 
 func main() {
-	var (
-		rating int
-		lon    float64
-		lat    float64
-		stno   sql.NullString
-		street sql.NullString
-		styp   sql.NullString
-		city   sql.NullString
-		state  sql.NullString
-		zip    sql.NullString
-	)
 	db := dbconnect()
 
 	// let's try a query
@@ -68,11 +69,28 @@ func main() {
 		log.Fatal(err)
 		os.Exit(2)
 	}
+
+	/*
+		var (
+			rating int
+			lon    float64
+			lat    float64
+			stno   sql.NullString
+			street sql.NullString
+			styp   sql.NullString
+			city   sql.NullString
+			state  sql.NullString
+			zip    sql.NullString
+		) */
+
 	for rows.Next() {
-		if err := rows.Scan(&rating, &lon, &lat, &stno, &street, &styp, &city, &state, &zip); err != nil {
+		//if err := rows.Scan(&rating, &lon, &lat, &stno, &street, &styp, &city, &state, &zip); err != nil {
+		gc := GeoCodeResult{}
+		if err := rows.Scan(&gc); err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("%f, %f", lon, lat)
+		//fmt.Printf("%f, %f", lon, lat)
+		fmt.Printf("%s, %s", gc.lon, gc.lat)
 		fmt.Println("")
 	}
 	if err := rows.Err(); err != nil {
