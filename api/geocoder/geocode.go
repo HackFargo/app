@@ -48,14 +48,16 @@ func dbconnect() *sql.DB {
 	return db
 }
 
-func main() {
-	db := dbconnect()
-
+func geocode(db *sql.DB) (float64, float64) {
 	// let's try a query
 	rows, err := db.Query("SELECT g.rating, ST_X(g.geomout) As lon, ST_Y(g.geomout) As lat, (addy).address As stno, (addy).streetname As street, (addy).streettypeabbrev As styp, (addy).location As city, (addy).stateabbrev As st,(addy).zip FROM geocode('Fargo, ND') As g;")
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(2)
+	}
+	if err := rows.Err(); err != nil {
+		log.Fatal(err)
+		os.Exit(3)
 	}
 
 	var (
@@ -74,11 +76,16 @@ func main() {
 		if err := rows.Scan(&rating, &lon, &lat, &stno, &street, &styp, &city, &st, &zip); err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("%f, %f", lon, lat)
-		fmt.Println("")
+
+		// for now, just return the first one (most likely)
+		break
 	}
-	if err := rows.Err(); err != nil {
-		log.Fatal(err)
-		os.Exit(3)
-	}
+	return lon, lat
+}
+
+func main() {
+	db := dbconnect()
+	lon, lat := geocode(db)
+	fmt.Printf("%f, %f", lon, lat)
+	fmt.Println("")
 }
