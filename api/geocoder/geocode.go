@@ -18,6 +18,7 @@ import (
 	"fmt"
 	_ "github.com/lib/pq"
 	"log"
+	"net/http"
 	"os"
 )
 
@@ -27,6 +28,10 @@ type Configuration struct {
 	User     string
 	Password string
 }
+
+// let's make the db pointer global, for now, so we don't
+// need to overload the http endpoint parameter list
+var db *sql.DB = dbconnect()
 
 func loadconfig(configuration *Configuration) {
 	// load config
@@ -83,9 +88,17 @@ func geocode(db *sql.DB, query string) (float64, float64) {
 	return lon, lat
 }
 
+// HTTP Endpoints
+func http_geocoder(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Path[len("/geocode/"):]
+	lon, lat := geocode(db, query)
+	fmt.Println("{\"lon\": %f, \"lat\": %f}", lon, lat)
+}
+
 func main() {
-	db := dbconnect()
 	lon, lat := geocode(db, "Fargo, ND")
 	fmt.Printf("%f, %f", lon, lat)
 	fmt.Println("")
+	http.HandleFunc("/geocode/", http_geocoder)
+	http.ListenAndServe(":9999", nil)
 }
