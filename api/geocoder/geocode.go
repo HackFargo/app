@@ -29,6 +29,18 @@ type Configuration struct {
 	Password string
 }
 
+type GeoCodeResult struct {
+	rating int
+	lon    float64
+	lat    float64
+	stno   sql.NullString
+	street sql.NullString
+	styp   sql.NullString
+	city   sql.NullString
+	st     sql.NullString
+	zip    sql.NullString
+}
+
 // let's make the db pointer global, for now, so we don't
 // need to overload the http endpoint parameter list
 var db *sql.DB = dbconnect()
@@ -53,7 +65,7 @@ func dbconnect() *sql.DB {
 	return db
 }
 
-func geocode(db *sql.DB, query string) (float64, float64) {
+func geocode(db *sql.DB, query string) *GeoCodeResult {
 	// let's try a query
 	rows, err := db.Query("SELECT g.rating, ST_X(g.geomout) As lon, ST_Y(g.geomout) As lat, (addy).address As stno, (addy).streetname As street, (addy).streettypeabbrev As styp, (addy).location As city, (addy).stateabbrev As st,(addy).zip FROM geocode($1) As g;", query)
 	if err != nil {
@@ -77,28 +89,41 @@ func geocode(db *sql.DB, query string) (float64, float64) {
 		zip    sql.NullString
 	)
 
+	result := new(GeoCodeResult)
 	for rows.Next() {
 		if err := rows.Scan(&rating, &lon, &lat, &stno, &street, &styp, &city, &st, &zip); err != nil {
 			log.Fatal(err)
 		}
+		result.rating = rating
+		result.lon = lon
+		result.lat = lat
+		result.stno = stno
+		result.street = street
+		result.styp = styp
+		result.city = city
+		result.st = st
+		result.zip = zip
 
 		// for now, just return the first one (most likely)
 		break
 	}
-	return lon, lat
+	//return lon, lat
+	return result
 }
 
 // HTTP Endpoints
 func http_geocoder(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Path[len("/geocode/"):]
-	lon, lat := geocode(db, query)
-	fmt.Fprintf(w, "{\"lon\": %f, \"lat\": %f}", lon, lat)
+	//lon, lat := geocode(db, query)
+	gc := geocode(db, query)
+	fmt.Fprintf(w, "{'lon': %.20f, 'lat': %.20f}", gc.lon, gc.lat)
 }
 
 func main() {
-	lon, lat := geocode(db, "Fargo, ND")
-	fmt.Printf("%f, %f", lon, lat)
+	//lon, lat := geocode(db, "Fargo, ND")
+	r := geocode(db, "Fargo, ND")
+	fmt.Printf("%.20f, %.20f", r.lon, r.lat)
 	fmt.Println("")
-	http.HandleFunc("/geocode/", http_geocoder)
-	http.ListenAndServe(":9999", nil)
+	//http.HandleFunc("/geocode/", http_geocoder)
+	//http.ListenAndServe(":9999", nil)
 }
