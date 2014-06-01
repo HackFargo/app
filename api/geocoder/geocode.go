@@ -65,6 +65,7 @@ func dbconnect() *sql.DB {
 	return db
 }
 
+// return full struct for geo code result
 func geocode(db *sql.DB, query string) *GeoCodeResult {
 	// let's try a query
 	rows, err := db.Query("SELECT g.rating, ST_X(g.geomout) As lon, ST_Y(g.geomout) As lat, (addy).address As stno, (addy).streetname As street, (addy).streettypeabbrev As styp, (addy).location As city, (addy).stateabbrev As st,(addy).zip FROM geocode($1) As g;", query)
@@ -77,32 +78,11 @@ func geocode(db *sql.DB, query string) *GeoCodeResult {
 		os.Exit(3)
 	}
 
-	var (
-		rating int
-		//lon    float64
-		lat    float64
-		stno   sql.NullString
-		street sql.NullString
-		styp   sql.NullString
-		city   sql.NullString
-		st     sql.NullString
-		zip    sql.NullString
-	)
-
 	result := new(GeoCodeResult)
 	for rows.Next() {
-		if err := rows.Scan(&rating, &(result.lon), &lat, &stno, &street, &styp, &city, &st, &zip); err != nil {
+		if err := rows.Scan(&(result.rating), &(result.lon), &(result.lat), &(result.stno), &(result.street), &(result.styp), &(result.city), &(result.st), &(result.zip)); err != nil {
 			log.Fatal(err)
 		}
-		result.rating = rating
-		//result.lon = lon
-		result.lat = lat
-		result.stno = stno
-		result.street = street
-		result.styp = styp
-		result.city = city
-		result.st = st
-		result.zip = zip
 
 		// for now, just return the first one (most likely)
 		break
@@ -111,19 +91,26 @@ func geocode(db *sql.DB, query string) *GeoCodeResult {
 	return result
 }
 
+// return just lon, lat -- no structs
+func geocode_longlat(db *sql.DB, query string) (float64, float64) {
+	gc := geocode(db, query)
+	return gc.lon, gc.lat
+}
+
 // HTTP Endpoints
 func http_geocoder(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Path[len("/geocode/"):]
 	//lon, lat := geocode(db, query)
 	gc := geocode(db, query)
-	fmt.Fprintf(w, "{'lon': %.20f, 'lat': %.20f}", gc.lon, gc.lat)
+	fmt.Fprintf(w, "{'lon': %.20f, 'lat': %.20f, 'rating': %d}", gc.lon, gc.lat, gc.rating)
 }
 
 func main() {
 	//lon, lat := geocode(db, "Fargo, ND")
 	r := geocode(db, "Fargo, ND")
-	fmt.Printf("%.20f, %.20f", r.lon, r.lat)
-	fmt.Println("")
-	//http.HandleFunc("/geocode/", http_geocoder)
-	//http.ListenAndServe(":9999", nil)
+	fmt.Println("Fargo, ND: %.20f, %.20f", r.lon, r.lat)
+
+	fmt.Println("Server listening on :9999")
+	http.HandleFunc("/geocode/", http_geocoder)
+	http.ListenAndServe(":9999", nil)
 }
