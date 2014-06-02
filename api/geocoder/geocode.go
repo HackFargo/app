@@ -108,9 +108,6 @@ func geocode(db *sql.DB, query string) []*GeoCodeResult {
 			log.Fatal(err)
 		}
 		rlist = append(rlist, result)
-
-		// for now, just return the first one (most likely)
-		break
 	}
 	//return lon, lat
 	//return result
