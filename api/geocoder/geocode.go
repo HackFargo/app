@@ -89,7 +89,7 @@ func dbconnect() *sql.DB {
 }
 
 // return full struct for geo code result
-func geocode(db *sql.DB, query string) *GeoCodeResult {
+func geocode(db *sql.DB, query string) []*GeoCodeResult {
 	// let's try a query
 	rows, err := db.Query("SELECT g.rating, ST_X(g.geomout) As lon, ST_Y(g.geomout) As lat, (addy).address As stno, (addy).streetname As street, (addy).streettypeabbrev As styp, (addy).location As city, (addy).stateabbrev As st,(addy).zip FROM geocode($1) As g;", query)
 	if err != nil {
@@ -101,23 +101,27 @@ func geocode(db *sql.DB, query string) *GeoCodeResult {
 		os.Exit(3)
 	}
 
-	result := new(GeoCodeResult)
+	rlist := []*GeoCodeResult{}
 	for rows.Next() {
+		result := new(GeoCodeResult)
 		if err := rows.Scan(&(result.rating), &(result.lon), &(result.lat), &(result.stno), &(result.street), &(result.styp), &(result.city), &(result.st), &(result.zip)); err != nil {
 			log.Fatal(err)
 		}
+		rlist = append(rlist, result)
 
 		// for now, just return the first one (most likely)
 		break
 	}
 	//return lon, lat
-	return result
+	//return result
+	return rlist
 }
 
 // return just lon, lat -- no structs
 func geocode_longlat(db *sql.DB, query string) (float64, float64) {
 	gc := geocode(db, query)
-	return gc.lon, gc.lat
+	// todo: check for length bounds here
+	return gc[0].lon, gc[0].lat
 }
 
 // HTTP Endpoints
@@ -125,7 +129,7 @@ func http_geocoder(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Path[len("/geocode/"):]
 	//lon, lat := geocode(db, query)
 	gc := geocode(db, query)
-	fmt.Fprintf(w, "{'lon': %.20f, 'lat': %.20f, 'rating': %d}", gc.lon, gc.lat, gc.rating)
+	fmt.Fprintf(w, "{'lon': %.20f, 'lat': %.20f, 'rating': %d}", gc[0].lon, gc[0].lat, gc[0].rating)
 }
 
 func http_root(w http.ResponseWriter, r *http.Request) {
@@ -135,7 +139,7 @@ func http_root(w http.ResponseWriter, r *http.Request) {
 func main() {
 	//lon, lat := geocode(db, "Fargo, ND")
 	r := geocode(db, "Fargo, ND")
-	fmt.Println(fmt.Sprintf("Fargo, ND: %.20f, %.20f", r.lon, r.lat))
+	fmt.Println(fmt.Sprintf("Fargo, ND: %.20f, %.20f", r[0].lon, r[0].lat))
 
 	fmt.Println("Server listening on :8282")
 	http.HandleFunc("/geocode/", http_geocoder)
