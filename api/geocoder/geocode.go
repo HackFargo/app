@@ -123,9 +123,8 @@ func geocode_longlat(db *sql.DB, query string) (float64, float64) {
 	// todo: check for length bounds here
 	if len(gc) > 0 {
 		return gc[0].lon, gc[0].lat
-	} else {
-		return 0, 0 // todo: make this a real error
 	}
+	return 0, 0 // todo: make this a real error
 }
 
 // HTTP Endpoints
