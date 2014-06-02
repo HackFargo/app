@@ -128,10 +128,13 @@ func http_geocoder(w http.ResponseWriter, r *http.Request) {
 	//lon, lat := geocode(db, query)
 	gc := geocode(db, query)
 	fmt.Fprintf(w, "[")
+	delim := ""
 	for i := 0; i < len(gc); i++ {
 		// stno | street | styp |   city    | st |  zip
-		fmt.Fprintf(w, "{\"lon\":%.20f, \"lat\":%.20f, \"rating\":%d, \"stno\":\"%s\", \"street\":\"%s\", \"styp\":\"%s\", \"city\":\"%s\", \"state\":\"%s\", \"zip\":\"%s\"},", gc[i].lon, gc[i].lat, gc[i].rating, gc[i].stno.String, gc[i].street.String, gc[i].styp.String, gc[i].city.String, gc[i].st.String, gc[i].zip.String)
-		fmt.Fprintln(w, "")
+		fmt.Fprintln(w, "%s", delim)
+		fmt.Fprintf(w, "{\"lon\":%.20f, \"lat\":%.20f, \"rating\":%d, \"stno\":\"%s\", \"street\":\"%s\", \"styp\":\"%s\", \"city\":\"%s\", \"state\":\"%s\", \"zip\":\"%s\"}", gc[i].lon, gc[i].lat, gc[i].rating, gc[i].stno.String, gc[i].street.String, gc[i].styp.String, gc[i].city.String, gc[i].st.String, gc[i].zip.String)
+		delim = ","
+
 	}
 	fmt.Fprintf(w, "]")
 }
