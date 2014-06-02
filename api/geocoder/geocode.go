@@ -121,7 +121,11 @@ func geocode(db *sql.DB, query string) []*GeoCodeResult {
 func geocode_longlat(db *sql.DB, query string) (float64, float64) {
 	gc := geocode(db, query)
 	// todo: check for length bounds here
-	return gc[0].lon, gc[0].lat
+	if len(gc) > 0 {
+		return gc[0].lon, gc[0].lat
+	} else {
+		return 0, 0 // todo: make this a real error
+	}
 }
 
 // HTTP Endpoints
@@ -129,7 +133,11 @@ func http_geocoder(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Path[len("/geocode/"):]
 	//lon, lat := geocode(db, query)
 	gc := geocode(db, query)
-	fmt.Fprintf(w, "{'lon': %.20f, 'lat': %.20f, 'rating': %d}", gc[0].lon, gc[0].lat, gc[0].rating)
+	fmt.Fprintf(w, "[")
+	for i := 0; i < len(gc); i++ {
+		fmt.Fprintf(w, "{'lon': %.20f, 'lat': %.20f, 'rating': %d},", gc[i].lon, gc[i].lat, gc[i].rating)
+	}
+	fmt.Fprintf(w, "]")
 }
 
 func http_root(w http.ResponseWriter, r *http.Request) {
