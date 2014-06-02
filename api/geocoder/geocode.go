@@ -129,7 +129,7 @@ func http_geocoder(w http.ResponseWriter, r *http.Request) {
 	gc := geocode(db, query)
 	fmt.Fprintf(w, "[")
 	for i := 0; i < len(gc); i++ {
-		fmt.Fprintf(w, "{'lon': %.20f, 'lat': %.20f, 'rating': %d, 'city': '%s', 'state': '%s'},", gc[i].lon, gc[i].lat, gc[i].rating, gc[i].city.String, gc[i].st)
+		fmt.Fprintf(w, "{'lon': %.20f, 'lat': %.20f, 'rating': %d, 'city': '%s', 'state': '%s'},", gc[i].lon, gc[i].lat, gc[i].rating, gc[i].city.String, gc[i].st.String)
 	}
 	fmt.Fprintf(w, "]")
 }
