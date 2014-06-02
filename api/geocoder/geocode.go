@@ -102,15 +102,19 @@ func geocode(db *sql.DB, query string) []*GeoCodeResult {
 	}
 
 	rlist := []*GeoCodeResult{}
+	i := 0
 	for rows.Next() {
 		result := new(GeoCodeResult)
 		if err := rows.Scan(&(result.rating), &(result.lon), &(result.lat), &(result.stno), &(result.street), &(result.styp), &(result.city), &(result.st), &(result.zip)); err != nil {
 			log.Fatal(err)
 		}
 		rlist = append(rlist, result)
+		i += 1
 	}
 	//return lon, lat
 	//return result
+	fmt.Println("Result set length: %d", len(rlist))
+	fmt.Println("Row Length: %d", i)
 	return rlist
 }
 
