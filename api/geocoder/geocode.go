@@ -156,8 +156,8 @@ func http_status(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	//lon, lat := geocode(db, "Fargo, ND")
-	r := geocode("Fargo, ND")
-	fmt.Println(fmt.Sprintf("Fargo, ND: %.20f, %.20f", r[0].lon, r[0].lat))
+	//r := geocode("Fargo, ND")
+	//fmt.Println(fmt.Sprintf("Fargo, ND: %.20f, %.20f", r[0].lon, r[0].lat))
 
 	fmt.Println("Server listening on :8282")
 	http.HandleFunc("/geocode/", http_geocoder)
