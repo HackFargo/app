@@ -163,5 +163,6 @@ func main() {
 	fmt.Println("Server listening on :8282")
 	http.HandleFunc("/geocode/", http_geocoder)
 	http.HandleFunc("/", http_root)
+	http.HandleFunc("/status", http_status)
 	http.ListenAndServe(":8282", nil)
 }
