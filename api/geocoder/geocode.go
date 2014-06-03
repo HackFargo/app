@@ -67,7 +67,8 @@ type GeoCodeResult struct {
 // let's make the db pointer global, for now, so we don't
 // need to overload the http endpoint parameter list
 //var db *sql.DB = dbconnect()
-var configuration = loadconfig()
+//var configuration = loadconfig()
+var db *sql.DB = dbconnect()
 
 func loadconfig() *Configuration {
 	// load config
@@ -85,7 +86,7 @@ func loadconfig() *Configuration {
 }
 
 func dbconnect() *sql.DB {
-	//configuration := Configuration{}
+	var configuration = loadconfig()
 	//loadconfig(&configuration)
 	db, _ := sql.Open("postgres", fmt.Sprintf("dbname=%s user=%s password=%s", configuration.Dbname, configuration.User, configuration.Password))
 	return db
@@ -95,7 +96,6 @@ func dbconnect() *sql.DB {
 //func geocode(db *sql.DB, query string) []*GeoCodeResult {
 func geocode(query string) []*GeoCodeResult {
 	// let's try a query
-	var db *sql.DB = dbconnect()
 	rows, err := db.Query("SELECT g.rating, ST_X(g.geomout) As lon, ST_Y(g.geomout) As lat, (addy).address As stno, (addy).streetname As street, (addy).streettypeabbrev As styp, (addy).location As city, (addy).stateabbrev As st,(addy).zip FROM geocode($1) As g;", query)
 	if err != nil {
 		log.Fatal(err)
