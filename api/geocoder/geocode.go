@@ -67,23 +67,26 @@ type GeoCodeResult struct {
 // let's make the db pointer global, for now, so we don't
 // need to overload the http endpoint parameter list
 //var db *sql.DB = dbconnect()
+var configuration = loadconfig()
 
-func loadconfig(configuration *Configuration) {
+func loadconfig() *Configuration {
 	// load config
+	c := new(Configuration)
 	fmt.Print("Loading config.json...")
 	file, _ := os.Open("./config.json")
 	decoder := json.NewDecoder(file)
-	err2 := decoder.Decode(&configuration)
+	err2 := decoder.Decode(&c)
 	if err2 != nil {
 		fmt.Println("error:", err2)
 		os.Exit(1)
 	}
 	fmt.Println("success")
+	return c
 }
 
 func dbconnect() *sql.DB {
-	configuration := Configuration{}
-	loadconfig(&configuration)
+	//configuration := Configuration{}
+	//loadconfig(&configuration)
 	db, _ := sql.Open("postgres", fmt.Sprintf("dbname=%s user=%s password=%s", configuration.Dbname, configuration.User, configuration.Password))
 	return db
 }
