@@ -66,7 +66,7 @@ type GeoCodeResult struct {
 
 // let's make the db pointer global, for now, so we don't
 // need to overload the http endpoint parameter list
-var db *sql.DB = dbconnect()
+//var db *sql.DB = dbconnect()
 
 func loadconfig(configuration *Configuration) {
 	// load config
@@ -89,8 +89,10 @@ func dbconnect() *sql.DB {
 }
 
 // return full struct for geo code result
-func geocode(db *sql.DB, query string) []*GeoCodeResult {
+//func geocode(db *sql.DB, query string) []*GeoCodeResult {
+func geocode(query string) []*GeoCodeResult {
 	// let's try a query
+	var db *sql.DB = dbconnect()
 	rows, err := db.Query("SELECT g.rating, ST_X(g.geomout) As lon, ST_Y(g.geomout) As lat, (addy).address As stno, (addy).streetname As street, (addy).streettypeabbrev As styp, (addy).location As city, (addy).stateabbrev As st,(addy).zip FROM geocode($1) As g;", query)
 	if err != nil {
 		log.Fatal(err)
@@ -113,8 +115,8 @@ func geocode(db *sql.DB, query string) []*GeoCodeResult {
 }
 
 // return just lon, lat -- no structs
-func geocode_longlat(db *sql.DB, query string) (float64, float64) {
-	gc := geocode(db, query)
+func geocode_longlat(query string) (float64, float64) {
+	gc := geocode(query)
 	// todo: check for length bounds here
 	if len(gc) > 0 {
 		return gc[0].lon, gc[0].lat
@@ -126,7 +128,7 @@ func geocode_longlat(db *sql.DB, query string) (float64, float64) {
 func http_geocoder(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Path[len("/geocode/"):]
 	//lon, lat := geocode(db, query)
-	gc := geocode(db, query)
+	gc := geocode(query)
 	fmt.Fprintf(w, "[")
 	delim := ""
 	for i := 0; i < len(gc); i++ {
@@ -146,7 +148,7 @@ func http_root(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	//lon, lat := geocode(db, "Fargo, ND")
-	r := geocode(db, "Fargo, ND")
+	r := geocode("Fargo, ND")
 	fmt.Println(fmt.Sprintf("Fargo, ND: %.20f, %.20f", r[0].lon, r[0].lat))
 
 	fmt.Println("Server listening on :8282")
