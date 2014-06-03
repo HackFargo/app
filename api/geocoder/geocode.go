@@ -98,16 +98,14 @@ func dbconnect() *sql.DB {
 //func geocode(db *sql.DB, query string) []*GeoCodeResult {
 func geocode(query string) []*GeoCodeResult {
 	// let's try a query
-	rlist := []*GeoCodeResult{}
 	rows, err := db.Query("SELECT g.rating, ST_X(g.geomout) As lon, ST_Y(g.geomout) As lat, (addy).address As stno, (addy).streetname As street, (addy).streettypeabbrev As styp, (addy).location As city, (addy).stateabbrev As st,(addy).zip FROM geocode($1) As g;", query)
 	if err != nil {
 		log.Fatal(err)
-		return rlist
 	}
 	if err := rows.Err(); err != nil {
 		log.Fatal(err)
-		return rlist
 	}
+	rlist := []*GeoCodeResult{}
 
 	for rows.Next() {
 		result := new(GeoCodeResult)
