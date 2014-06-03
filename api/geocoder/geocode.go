@@ -94,20 +94,21 @@ func dbconnect() *sql.DB {
 }
 
 // return full struct for geo code result
+// if db crashes, returns an empty list
 //func geocode(db *sql.DB, query string) []*GeoCodeResult {
 func geocode(query string) []*GeoCodeResult {
 	// let's try a query
+	rlist := []*GeoCodeResult{}
 	rows, err := db.Query("SELECT g.rating, ST_X(g.geomout) As lon, ST_Y(g.geomout) As lat, (addy).address As stno, (addy).streetname As street, (addy).streettypeabbrev As styp, (addy).location As city, (addy).stateabbrev As st,(addy).zip FROM geocode($1) As g;", query)
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(2)
+		return rlist
 	}
 	if err := rows.Err(); err != nil {
 		log.Fatal(err)
-		os.Exit(3)
+		return rlist
 	}
 
-	rlist := []*GeoCodeResult{}
 	for rows.Next() {
 		result := new(GeoCodeResult)
 		if err := rows.Scan(&(result.rating), &(result.lon), &(result.lat), &(result.stno), &(result.street), &(result.styp), &(result.city), &(result.st), &(result.zip)); err != nil {
