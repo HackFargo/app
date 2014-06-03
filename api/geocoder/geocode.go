@@ -152,7 +152,7 @@ func http_root(w http.ResponseWriter, r *http.Request) {
 }
 
 func http_status(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "{\"status\": \"OK\", \"requests\": %d", num_requests)
+	fmt.Fprintf(w, "{\"status\": \"OK\", \"requests\": %d}", num_requests)
 }
 
 func main() {
