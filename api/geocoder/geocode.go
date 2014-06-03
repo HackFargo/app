@@ -69,6 +69,7 @@ type GeoCodeResult struct {
 //var db *sql.DB = dbconnect()
 //var configuration = loadconfig()
 var db *sql.DB = dbconnect()
+var num_requests uint = 0
 
 func loadconfig() *Configuration {
 	// load config
@@ -114,6 +115,7 @@ func geocode(query string) []*GeoCodeResult {
 		}
 		rlist = append(rlist, result)
 	}
+	num_requests++
 	return rlist
 }
 
@@ -147,6 +149,10 @@ func http_geocoder(w http.ResponseWriter, r *http.Request) {
 
 func http_root(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hi there! Check out http://hackfargo.co")
+}
+
+func http_status(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "{\"status\": \"OK\", \"requests\": %d", num_requests)
 }
 
 func main() {
