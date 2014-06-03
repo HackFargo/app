@@ -163,5 +163,5 @@ func main() {
 	http.HandleFunc("/geocode/", http_geocoder)
 	http.HandleFunc("/", http_root)
 	http.HandleFunc("/status", http_status)
-	http.ListenAndServe(":8282", nil)
+	log.Fatal(http.ListenAndServe(":8282", nil))
 }
