@@ -70,6 +70,7 @@ type GeoCodeResult struct {
 //var configuration = loadconfig()
 var db *sql.DB = dbconnect()
 var num_requests uint = 0
+var cache map[string][]*GeoCodeResult = make(map[string][]*GeoCodeResult)
 
 func loadconfig() *Configuration {
 	// load config
@@ -102,13 +103,18 @@ func geocode(query string) []*GeoCodeResult {
 	rows, err := db.Query("SELECT g.rating, ST_X(g.geomout) As lon, ST_Y(g.geomout) As lat, (addy).address As stno, (addy).streetname As street, (addy).streettypeabbrev As styp, (addy).location As city, (addy).stateabbrev As st,(addy).zip FROM geocode($1) As g;", query)
 	if err != nil {
 		log.Fatal(err)
-		return rlist
 	}
 	if err := rows.Err(); err != nil {
 		log.Fatal(err)
-		return rlist
 	}
 
+	// check cache
+	var ok bool
+	_, ok = cache[query]
+	fmt.Println("Is '%s' in cache (%d items)? %s", query, len(cache), ok)
+	if ok == true {
+		return cache[query]
+	}
 	for rows.Next() {
 		result := new(GeoCodeResult)
 		if err := rows.Scan(&(result.rating), &(result.lon), &(result.lat), &(result.stno), &(result.street), &(result.styp), &(result.city), &(result.st), &(result.zip)); err != nil {
@@ -117,6 +123,7 @@ func geocode(query string) []*GeoCodeResult {
 		rlist = append(rlist, result)
 	}
 	num_requests++
+	cache[query] = rlist
 	return rlist
 }
 
@@ -158,8 +165,8 @@ func http_status(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	//lon, lat := geocode(db, "Fargo, ND")
-	//r := geocode("Fargo, ND")
-	//fmt.Println(fmt.Sprintf("Fargo, ND: %.20f, %.20f", r[0].lon, r[0].lat))
+	r := geocode("Fargo, ND")
+	fmt.Println(fmt.Sprintf("Fargo, ND: %.20f, %.20f", r[0].lon, r[0].lat))
 
 	fmt.Println("Server listening on :8282")
 	http.HandleFunc("/geocode/", http_geocoder)
