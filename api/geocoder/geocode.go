@@ -71,6 +71,7 @@ type GeoCodeResult struct {
 var db *sql.DB = dbconnect()
 var num_requests uint = 0
 var cache map[string][]*GeoCodeResult = make(map[string][]*GeoCodeResult)
+var cache_hits = 0
 
 func loadconfig() *Configuration {
 	// load config
@@ -111,8 +112,9 @@ func geocode(query string) []*GeoCodeResult {
 	// check cache
 	var ok bool
 	_, ok = cache[query]
-	fmt.Println("Is '%s' in cache (%d items)? %s", query, len(cache), ok)
+	fmt.Println(Sprintf("Is '%s' in cache (%d items)? %s", query, len(cache), ok))
 	if ok == true {
+		cache_hits++
 		return cache[query]
 	}
 	for rows.Next() {
@@ -160,7 +162,7 @@ func http_root(w http.ResponseWriter, r *http.Request) {
 }
 
 func http_status(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "{\"status\": \"OK\", \"requests\": %d}", num_requests)
+	fmt.Fprintf(w, "{\"status\": \"OK\", \"requests\": %d, \"cache_hits\": %d, \"cache_size\": %d}", num_requests, cache_hits, len(cache))
 }
 
 func main() {
