@@ -101,6 +101,16 @@ func dbconnect() *sql.DB {
 func geocode(query string) []*GeoCodeResult {
 	// let's try a query
 	rlist := []*GeoCodeResult{}
+
+	// check cache
+	var ok bool
+	_, ok = cache[query]
+	fmt.Println(fmt.Sprintf("Is '%s' in cache (%d items)? %d", query, len(cache), ok))
+	if ok == true {
+		cache_hits++
+		return cache[query]
+	}
+
 	rows, err := db.Query("SELECT g.rating, ST_X(g.geomout) As lon, ST_Y(g.geomout) As lat, (addy).address As stno, (addy).streetname As street, (addy).streettypeabbrev As styp, (addy).location As city, (addy).stateabbrev As st,(addy).zip FROM geocode($1) As g;", query)
 	if err != nil {
 		log.Fatal(err)
@@ -109,14 +119,6 @@ func geocode(query string) []*GeoCodeResult {
 		log.Fatal(err)
 	}
 
-	// check cache
-	var ok bool
-	_, ok = cache[query]
-	fmt.Println(fmt.Sprintf("Is '%s' in cache (%d items)? %s", query, len(cache), ok))
-	if ok == true {
-		cache_hits++
-		return cache[query]
-	}
 	for rows.Next() {
 		result := new(GeoCodeResult)
 		if err := rows.Scan(&(result.rating), &(result.lon), &(result.lat), &(result.stno), &(result.street), &(result.styp), &(result.city), &(result.st), &(result.zip)); err != nil {
