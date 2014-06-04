@@ -112,7 +112,7 @@ func geocode(query string) []*GeoCodeResult {
 	// check cache
 	var ok bool
 	_, ok = cache[query]
-	fmt.Println(Sprintf("Is '%s' in cache (%d items)? %s", query, len(cache), ok))
+	fmt.Println(fmt.Sprintf("Is '%s' in cache (%d items)? %s", query, len(cache), ok))
 	if ok == true {
 		cache_hits++
 		return cache[query]
