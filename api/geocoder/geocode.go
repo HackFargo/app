@@ -101,6 +101,7 @@ func dbconnect() *sql.DB {
 func geocode(query string) []*GeoCodeResult {
 	// let's try a query
 	rlist := []*GeoCodeResult{}
+	num_requests++
 
 	// check cache
 	var ok bool
@@ -126,7 +127,6 @@ func geocode(query string) []*GeoCodeResult {
 		}
 		rlist = append(rlist, result)
 	}
-	num_requests++
 	cache[query] = rlist
 	return rlist
 }
