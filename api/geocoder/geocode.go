@@ -53,15 +53,15 @@ type Configuration struct {
 }
 
 type GeoCodeResult struct {
-	rating int
-	lon    float64
-	lat    float64
-	stno   sql.NullString
-	street sql.NullString
-	styp   sql.NullString
-	city   sql.NullString
-	st     sql.NullString
-	zip    sql.NullString
+	Rating int            `json:"rating"`
+	Lon    float64        `json:"lon"`
+	Lat    float64        `json:"lat"`
+	Stno   sql.NullString `json:"stno"`
+	Street sql.NullString `json:"street"`
+	Styp   sql.NullString `json:"styp"`
+	City   sql.NullString `json:"city"`
+	St     sql.NullString `json:"st"`
+	Zip    sql.NullString `json:"zip"`
 }
 
 // let's make the db pointer global, for now, so we don't
@@ -95,6 +95,16 @@ func dbconnect() *sql.DB {
 	return db
 }
 
+func geo2json(obj GeoCodeResult) []byte {
+	b, _ := json.Marshal(obj)
+	return b
+}
+
+func json2geo(obj []byte) *GeoCodeResult {
+	result := new(GeoCodeResult)
+	return json.Unmarshal(obj, &result)
+}
+
 // return full struct for geo code result
 // if db crashes, returns an empty list
 //func geocode(db *sql.DB, query string) []*GeoCodeResult {
@@ -122,7 +132,7 @@ func geocode(query string) []*GeoCodeResult {
 
 	for rows.Next() {
 		result := new(GeoCodeResult)
-		if err := rows.Scan(&(result.rating), &(result.lon), &(result.lat), &(result.stno), &(result.street), &(result.styp), &(result.city), &(result.st), &(result.zip)); err != nil {
+		if err := rows.Scan(&(result.Rating), &(result.Lon), &(result.Lat), &(result.Stno), &(result.Street), &(result.Styp), &(result.City), &(result.St), &(result.Zip)); err != nil {
 			log.Fatal(err)
 		}
 		rlist = append(rlist, result)
@@ -136,7 +146,7 @@ func geocode_longlat(query string) (float64, float64) {
 	gc := geocode(query)
 	// todo: check for length bounds here
 	if len(gc) > 0 {
-		return gc[0].lon, gc[0].lat
+		return gc[0].Lon, gc[0].Lat
 	}
 	return 0, 0 // todo: make this a real error
 }
@@ -151,7 +161,7 @@ func http_geocoder(w http.ResponseWriter, r *http.Request) {
 	for i := 0; i < len(gc); i++ {
 		// stno | street | styp |   city    | st |  zip
 		fmt.Fprintf(w, "%s", delim)
-		fmt.Fprintf(w, "{\"lon\":%.20f, \"lat\":%.20f, \"rating\":%d, \"stno\":\"%s\", \"street\":\"%s\", \"styp\":\"%s\", \"city\":\"%s\", \"state\":\"%s\", \"zip\":\"%s\"}", gc[i].lon, gc[i].lat, gc[i].rating, gc[i].stno.String, gc[i].street.String, gc[i].styp.String, gc[i].city.String, gc[i].st.String, gc[i].zip.String)
+		fmt.Fprintf(w, "{\"lon\":%.20f, \"lat\":%.20f, \"rating\":%d, \"stno\":\"%s\", \"street\":\"%s\", \"styp\":\"%s\", \"city\":\"%s\", \"state\":\"%s\", \"zip\":\"%s\"}", gc[i].Lon, gc[i].Lat, gc[i].Rating, gc[i].Stno.String, gc[i].Street.String, gc[i].Styp.String, gc[i].City.String, gc[i].St.String, gc[i].Zip.String)
 		delim = ","
 		fmt.Fprintln(w, "")
 
@@ -169,12 +179,15 @@ func http_status(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	//lon, lat := geocode(db, "Fargo, ND")
-	r := geocode("Fargo, ND")
+
+	t := GeoCodeResult{10, 12.34, 56.24, sql.NullString{"200", true}, sql.NullString{"main", true}, sql.NullString{"ave", true}, sql.NullString{"fargo", true}, sql.NullString{"ND", true}, sql.NullString{"24542", true}}
+	geo2json(t)
+	/*r := geocode("Fargo, ND")
 	fmt.Println(fmt.Sprintf("Fargo, ND: %.20f, %.20f", r[0].lon, r[0].lat))
 
 	fmt.Println("Server listening on :8282")
 	http.HandleFunc("/geocode/", http_geocoder)
 	http.HandleFunc("/", http_root)
 	http.HandleFunc("/status", http_status)
-	log.Fatal(http.ListenAndServe(":8282", nil))
+	log.Fatal(http.ListenAndServe(":8282", nil))*/
 }

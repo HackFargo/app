@@ -34,6 +34,20 @@ def update_record(CFSID, lat, lon, lookup_type=1):
     c.execute(query, (lat, lon, lookup_type, CFSID))
 
 
+def db_commit():
+    conn.commit()
+
+
+def random_dispatch(n=10):
+    '''
+        Returns a list of n=10 random dispatch log entries
+    '''
+    query = '''select * from DispatchLogs order by random() limit ?;'''
+    c.execute(query, (str(n),))
+    rows = c.fetchall()
+    return rows
+
+
 def update_geo_real():
     '''
         Use a true upstream geocoder to identify the locations
@@ -71,14 +85,14 @@ def update_geo_real():
             result = geocoder.google(address).latlng
             coder = 'google'
         lat, lon = result
-        print address
-        print '%d/%d (%.5f%%)  %.9f, %.9f - %s' % (i, total, (float(i) / total) * 100, lat, lon, coder)
+        print(address)
+        print('%d/%d (%.5f%%)  %.9f, %.9f - %s' % (i, total, (float(i) / total) * 100, lat, lon, coder))
         if lat != None:
             update_record(r['CFSID'], lat, lon, 2)
             success += 1
         conn.commit()
         i += 1
-    print success, 'successful lookups of ', total, ' total rows'
+    print(success, 'successful lookups of ', total, ' total rows')
 
 
 def update_geo():
@@ -102,20 +116,20 @@ def update_geo():
 
             if (rt == ''):
                 # '13 AVE'
-                print b, rn, rt, su
+                print(b, rn, rt, su)
                 if rn.upper() == 'BROADWAY':
                     rt = 'ST'
-                    print '   Broadway Fixed'
+                    print('   Broadway Fixed')
                 else:
                     tokens = r['StreetName'].split(" ")
                     if (len(tokens) == 1):
                         # I94
-                        print '   ====> invalid token', tokens
+                        print('   ====> invalid token', tokens)
                         raise
                     else:
                         rn = tokens[0]
                         rt = tokens[1]
-                        print ' ', rn, rt, ' fixed with tokens'
+                        print(' ', rn, rt, ' fixed with tokens')
             # 16 1/2 street
             if ('1/2' in rn):
                 tokens = rn.split(" ")
@@ -128,29 +142,29 @@ def update_geo():
                 # don't parse lanes, cir, etc.
                 raise ValueError
         except ValueError:
-            print r['Block'], r['StreetName'].upper(), '... trying to fix'
+            print(r['Block'], r['StreetName'].upper(), '... trying to fix')
             if r['StreetName'].upper() == 'UNIVERSITY':
                 roadNum = 13
                 roadType = "ST"
                 suffix = "N"
-                print '   University fixed'
+                print('   University fixed')
             elif r['StreetName'].upper() == 'BROADWAY':
                 roadNum = 6
                 roadType = "ST"
                 suffix = "N"
-                print '   Broadway Fixed (mapped)'
+                print('   Broadway Fixed (mapped)')
             elif r['StreetName'].upper() == 'MAIN':
                 roadNum = 0
                 roadType = "AVE"
                 suffix = "N"
-                print '   MAIN Fixed'
+                print('   MAIN Fixed')
             elif r['StreetName'].upper() == 'NORTHERN PACIFIC':
                 roadNum = .5
                 roadType = "AVE"
                 suffix = "N"
-                print '   NP Ave Fixed'
+                print('   NP Ave Fixed')
             else:
-                print '   invalid name:', b, rn, rt, su
+                print('   invalid name:', b, rn, rt, su)
                 continue
 
         lat, lon = geofudge(int(block), float(roadNum), str(roadType), str(suffix))
@@ -158,7 +172,7 @@ def update_geo():
 
         update_record(r['CFSID'], lat, lon)
     conn.commit()
-    print success, 'successful lookups of ', total, ' total rows'
+    print(success, 'successful lookups of ', total, ' total rows')
 
 
 def dbinit():
@@ -221,17 +235,54 @@ def dbinit():
 '''
 
 
+def normalize_dispatch_address(addr, city='Fargo, ND'):
+    '''
+        Returns a postgis friendly address from a dispatch log entry.
+
+        * removes "BLK" if present
+        * pluralizes street name (34 => 34th)
+    '''
+    import inflect
+    p = inflect.engine()
+    addr = addr.lower()
+    number, street_chunk = 0, ''
+    if ("blk" in addr):
+        t = addr.split(" blk ")
+        number = t[0]
+        street_chunk = t[1]
+        # Quick quirky first
+        if (int(number) == 0):
+            number = 1
+    else:
+        '''
+            If there is no BLK, it's likely just a street like:
+            9 Ave S
+        '''
+        # print 'address is invalid: ', addr
+        return None
+    parts = street_chunk.split(' ')
+    street_name = parts[0]
+    try:
+        street_name = int(street_name)
+        street_name = p.ordinal(street_name)
+    except ValueError:
+        # Non-numeric street like Roberts Street
+        pass
+    address = ' '.join([str(number), street_name, ' '.join(parts[1:])])
+    return address + " " + city
+
+
 def populate(folder='json/'):
     #files = glob.glob(os.path.join(folder, '*.json'))
     # for f in files:
     f = 'combined.json'
     with open(os.path.join(folder, f), 'r') as h:
         data = simplejson.load(h)['DispatchLog']
-        print 'loaded %d items for %s' % (len(data), f)
+        print('loaded %d items for %s' % (len(data), f))
         n = len(data)
         for i, d in enumerate(data):
             if (i % 5000 == 0):
-                print '   (%.0f%%) %d/%d items processed' % ((float(i) / n) * 100, i, n)
+                print('   (%.0f%%) %d/%d items processed' % ((float(i) / n) * 100, i, n))
             dt = datetime.strptime(d['DateString'], '%m/%d/%Y %I:%M:%S %p')
             # unix timestamp value of the parsed date object
             dateval = dt.strftime('%s')
@@ -262,7 +313,8 @@ def populate(folder='json/'):
 
 if __name__ == "__main__":
     # dbinit()
-    populate()
+    # populate()
 
     # update_geo_real()
     # conn.close()
+    pass
