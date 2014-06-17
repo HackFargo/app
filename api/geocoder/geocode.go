@@ -100,10 +100,10 @@ func geo2json(obj GeoCodeResult) []byte {
 	return b
 }
 
-func json2geo(obj []byte) *GeoCodeResult {
+/*func json2geo(obj []byte) *GeoCodeResult {
 	result := new(GeoCodeResult)
 	return json.Unmarshal(obj, &result)
-}
+}*/
 
 // return full struct for geo code result
 // if db crashes, returns an empty list
@@ -180,14 +180,14 @@ func http_status(w http.ResponseWriter, r *http.Request) {
 func main() {
 	//lon, lat := geocode(db, "Fargo, ND")
 
-	t := GeoCodeResult{10, 12.34, 56.24, sql.NullString{"200", true}, sql.NullString{"main", true}, sql.NullString{"ave", true}, sql.NullString{"fargo", true}, sql.NullString{"ND", true}, sql.NullString{"24542", true}}
-	geo2json(t)
-	/*r := geocode("Fargo, ND")
-	fmt.Println(fmt.Sprintf("Fargo, ND: %.20f, %.20f", r[0].lon, r[0].lat))
+	//t := GeoCodeResult{10, 12.34, 56.24, sql.NullString{"200", true}, sql.NullString{"main", true}, sql.NullString{"ave", true}, sql.NullString{"fargo", true}, sql.NullString{"ND", true}, sql.NullString{"24542", true}}
+	//geo2json(t)
+	r := geocode("Fargo, ND")
+	fmt.Println(fmt.Sprintf("Fargo, ND: %.20f, %.20f", r[0].Lon, r[0].Lat))
 
 	fmt.Println("Server listening on :8282")
 	http.HandleFunc("/geocode/", http_geocoder)
 	http.HandleFunc("/", http_root)
 	http.HandleFunc("/status", http_status)
-	log.Fatal(http.ListenAndServe(":8282", nil))*/
+	log.Fatal(http.ListenAndServe(":8282", nil))
 }
